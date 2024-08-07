@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Peran {
+  idPeran Int @id @default(autoincrement())
+  namaPeran String 
+  pengguna Pengguna[]
+}
+
+model Pengguna {
+  idPengguna Int @id @default(autoincrement())
+  idPeran Int
+  peran Peran @relation(fields: [idPeran], references: [idPeran])
+  namaPengguna String @unique
+  noTeleponPengguna String
+  email String @unique
+  password String
+  alamatPengguna String
+  toko Toko?
+  pesanan Pesanan[]
+}
+
+model Toko {
+  idToko Int @id @default(autoincrement())
+  idPengguna Int @unique
+  pengguna Pengguna @relation(fields: [idPengguna], references: [idPengguna])
+  namaToko String
+  gambarToko String
+  deskripsiToko String
+  jamBuka DateTime
+  jamTutup DateTime
+  alamatToko String
+  noTeleponToko String
+  produk Produk[]
+}
+
+model Kategori {
+  idKategori Int @id @default(autoincrement())
+  namaKategori String
+  produk Produk[]
+}
+
+model Produk {
+  idProduk Int @id @default(autoincrement())
+  idToko Int
+  idKategori Int
+  namaProduk String
+  harga Int
+  gambarProduk String
+  deskripsiProduk String
+  tanggalKedaluwarsa DateTime
+  stok Int
+  isActive Int
+  potonganHarga ListPotonganHarga[]
+  toko Toko @relation(fields: [idToko], references: [idToko])
+  kategori Kategori @relation(fields: [idKategori], references: [idKategori])
+  detailPesanan DetailPesanan[]
+}
+
+model ListPotonganHarga {
+  idLPH Int @id @default(autoincrement())
+  idProduk Int
+  jumlah Int
+  produk Produk @relation(fields: [idProduk], references: [idProduk])
+}
+
+model Pesanan {
+  idPesanan Int @id @default(autoincrement())
+  idPengguna Int
+  tanggalPesanan DateTime
+  statusPesanan Int
+  totalHarga Int
+  pengguna Pengguna @relation(fields: [idPengguna], references: [idPengguna])
+  detailPesanan DetailPesanan[]
+}
+
+model DetailPesanan {
+  idDetailPesanan Int @id @default(autoincrement())
+  idPesanan Int
+  idProduk Int
+  jumlah Int
+  jumlahHarga Int
+  pesanan Pesanan @relation(fields: [idPesanan], references: [idPesanan])
+  produk Produk @relation(fields: [idProduk], references: [idProduk])
+}
+
+model Favorit {
+  idFavorit Int @id @default(autoincrement())
+  idPengguna Int
+  idToko Int
+  @@unique([idPengguna, idToko])
+}
