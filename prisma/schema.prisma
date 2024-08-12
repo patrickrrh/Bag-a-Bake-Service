@@ -30,6 +30,8 @@ model Pengguna {
   alamatPengguna String
   toko Toko?
   pesanan Pesanan[]
+  tanggalDaftar DateTime @default(now())
+  refreshTokens RefreshToken[]
 }
 
 model Toko {
@@ -101,4 +103,13 @@ model Favorit {
   idPengguna Int
   idToko Int
   @@unique([idPengguna, idToko])
+}
+
+model RefreshToken {
+  jti String @id @default(uuid())
+  hashedToken String
+  idPengguna Int
+  revoked Boolean @default(false)
+  createdDate DateTime @default(now())
+  pengguna Pengguna @relation(fields: [idPengguna], references: [idPengguna])
 }
