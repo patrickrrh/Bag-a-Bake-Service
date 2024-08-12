@@ -23,7 +23,7 @@ model Pengguna {
   idPengguna Int @id @default(autoincrement())
   idPeran Int
   peran Peran @relation(fields: [idPeran], references: [idPeran])
-  namaPengguna String @unique
+  namaPengguna String
   noTeleponPengguna String
   email String @unique
   password String

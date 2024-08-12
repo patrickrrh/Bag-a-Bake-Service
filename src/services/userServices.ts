@@ -11,14 +11,16 @@ interface CreateUserInput {
     idPeran: number;
 }
 
-export async function findUserByEmailOrUsername(email?: string, namaPengguna?: string): Promise<Pengguna | null> {
-    if (!email && !namaPengguna) {
-        throw new Error('Email or username is required');
+export async function findUserByEmail(email: string): Promise<Pengguna | null> {
+    if (!email) {
+        throw new Error('Email is required');
     }
 
     try {
         return await db.pengguna.findUnique({
-            where: email ? { email } : { namaPengguna }
+            where: { 
+                email
+             }
         })
     } catch (error) {
         throw new Error("Failed to find user")
