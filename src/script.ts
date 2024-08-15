@@ -1,5 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+class DatabaseService {
+    private prisma: PrismaClient
 
-export default prisma;
+    constructor() {
+        this.prisma = new PrismaClient();
+    }
+
+    public getClient(): PrismaClient {
+        return this.prisma
+    }
+}
+
+const databaseService = new DatabaseService();
+export default databaseService;
