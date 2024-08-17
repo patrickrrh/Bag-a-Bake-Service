@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { UserServices } from "../services/userServices";
 import { AuthServices } from "../services/authServices";
 import bycrpt from 'bcrypt';
+import jwt from "jsonwebtoken";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
@@ -66,6 +67,38 @@ export class AuthController {
             await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, idPengguna: checkExistingUser.idPengguna });
 
             res.status(200).json({ accessToken, refreshToken });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    public async refreshAuthentication(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { refreshToken } = req.body
+            if (!refreshToken) {
+                res.status(400)
+                throw new Error('Missing refresh token')
+            }
+
+            const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { idPengguna: number, jti: string };
+            const getRefreshToken = await authServices.findRefreshTokenById(payload.jti);
+            if (!getRefreshToken || getRefreshToken.revoked === true) {
+                res.status(401)
+                throw new Error('Unauthorized')
+            }
+
+            const getUser = await userServices.findUserById(payload.idPengguna);
+            if (!getUser) {
+                res.status(401)
+                throw new Error('Unauthorized')
+            }
+
+            await authServices.deleteRefreshToken(payload.jti);
+            const jti = uuidv4();
+            const { accessToken, refreshToken: newRefreshToken } = generateTokens(getUser.idPengguna, jti);
+            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken: newRefreshToken, idPengguna: getUser.idPengguna });  
+
+            res.status(200).json({ accessToken, refreshToken: newRefreshToken });
         } catch (error) {
             next(error);
         }
