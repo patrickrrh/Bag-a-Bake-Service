@@ -14,14 +14,14 @@ export class AuthController {
         try {
             const { idPeran, namaPengguna, noTeleponPengguna, email, password, alamatPengguna } = req.body
             if (( !idPeran || !namaPengguna || !noTeleponPengguna || !email || !password || !alamatPengguna )) {
-                res.status(400)
-                throw new Error('All fields must be filled')
+                res.status(400).json({ error: 'All fields must be filled' });
+                return;
             }
     
             const checkExistingUser = await userServices.findUserByEmail(email);
             if (checkExistingUser) {
-                res.status(400)
-                throw new Error('Email has already been taken')
+                res.status(400).json({ error: 'Email has already been taken' });
+                return;
             }
     
             const pengguna = await userServices.createUser({
@@ -44,22 +44,23 @@ export class AuthController {
 
     public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
+            console.log("request received")
             const { email, password } = req.body
             if (!email || !password) {
-                res.status(400)
-                throw new Error('All fields must be filled')
+                res.status(400).json({ error: 'All fields must be filled' });
+                return;
             }
 
             const checkExistingUser = await userServices.findUserByEmail(email);
             if (!checkExistingUser) {
-                res.status(400)
-                throw new Error('Email is not registered')
+                res.status(400).json({ error: 'Email is not registered' });
+                return;
             }
 
             const checkPassword = await bycrpt.compare(password, checkExistingUser.password);
             if (!checkPassword) {
-                res.status(400)
-                throw new Error('Password is incorrect')
+                res.status(400).json({ error: 'Password is incorrect' });
+                return;
             }
 
             const jti = uuidv4();
@@ -76,21 +77,21 @@ export class AuthController {
         try {
             const { refreshToken } = req.body
             if (!refreshToken) {
-                res.status(400)
-                throw new Error('Missing refresh token')
+                res.status(400).json({ error: 'Missing refresh token' })
+                return;
             }
 
             const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { idPengguna: number, jti: string };
             const getRefreshToken = await authServices.findRefreshTokenById(payload.jti);
             if (!getRefreshToken || getRefreshToken.revoked === true) {
-                res.status(401)
-                throw new Error('Unauthorized')
+                res.status(401).json({ error: 'Unauthorized' })
+                return;
             }
 
             const getUser = await userServices.findUserById(payload.idPengguna);
             if (!getUser) {
-                res.status(401)
-                throw new Error('Unauthorized')
+                res.status(401).json({ error: 'Unauthorized' })
+                return;
             }
 
             await authServices.deleteRefreshToken(payload.jti);
