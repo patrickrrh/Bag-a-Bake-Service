@@ -3,27 +3,29 @@ import { generateTokens } from "../utilities/jwt";
 import { v4 as uuidv4 } from 'uuid';
 import { UserServices } from "../services/userServices";
 import { AuthServices } from "../services/authServices";
+import { TokoServices } from "../services/tokoServices";
 import bycrpt from 'bcrypt';
 import jwt from "jsonwebtoken";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
+const tokoServices = new TokoServices();
 
 export class AuthController {
-    public async register(req: Request, res: Response, next: NextFunction): Promise<void> { 
+    public async register(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { idPeran, namaPengguna, noTeleponPengguna, email, password, alamatPengguna } = req.body
-            if (( !idPeran || !namaPengguna || !noTeleponPengguna || !email || !password || !alamatPengguna )) {
-                res.status(400).json({ error: 'All fields must be filled' });
-                return;
-            }
-    
+            const { idPeran, namaPengguna, noTeleponPengguna, email, password, alamatPengguna, namaToko, gambarToko, deskripsiToko, jamBuka, jamTutup, alamatToko, noTeleponToko } = req.body
+            // if (( !idPeran || !namaPengguna || !noTeleponPengguna || !email || !password || !alamatPengguna || !namaToko || !gambarToko || !deskripsiToko || !jamBuka || !jamTutup || !alamatToko || !noTeleponToko)) {
+            //     res.status(400).json({ error: 'All fields must be filled' });
+            //     return;
+            // }
+
             const checkExistingUser = await userServices.findUserByEmail(email);
             if (checkExistingUser) {
                 res.status(400).json({ error: 'Email has already been taken' });
                 return;
             }
-    
+
             const pengguna = await userServices.createUser({
                 idPeran,
                 email,
@@ -32,10 +34,24 @@ export class AuthController {
                 password,
                 alamatPengguna
             });
+
+            if (pengguna.idPeran === 2) {
+                await tokoServices.createToko({
+                    idPengguna: pengguna.idPengguna,
+                    namaToko,
+                    gambarToko,
+                    deskripsiToko,
+                    jamBuka,
+                    jamTutup,
+                    alamatToko,
+                    noTeleponToko
+                })
+            }
+
             const jti = uuidv4();
             const { accessToken, refreshToken } = generateTokens(pengguna.idPengguna, jti);
             await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, idPengguna: pengguna.idPengguna });
-    
+
             res.status(201).json({ accessToken, refreshToken });
         } catch (error) {
             next(error);
@@ -44,12 +60,11 @@ export class AuthController {
 
     public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            console.log("request received")
             const { email, password } = req.body
-            if (!email || !password) {
-                res.status(400).json({ error: 'All fields must be filled' });
-                return;
-            }
+            // if (!email || !password) {
+            //     res.status(400).json({ error: 'All fields must be filled' });
+            //     return;
+            // }
 
             const checkExistingUser = await userServices.findUserByEmail(email);
             if (!checkExistingUser) {
@@ -97,7 +112,7 @@ export class AuthController {
             await authServices.deleteRefreshToken(payload.jti);
             const jti = uuidv4();
             const { accessToken, refreshToken: newRefreshToken } = generateTokens(getUser.idPengguna, jti);
-            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken: newRefreshToken, idPengguna: getUser.idPengguna });  
+            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken: newRefreshToken, idPengguna: getUser.idPengguna });
 
             res.status(200).json({ accessToken, refreshToken: newRefreshToken });
         } catch (error) {

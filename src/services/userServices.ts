@@ -3,12 +3,12 @@ import { Pengguna } from '@prisma/client';
 import databaseService from '../script';
 
 interface CreateUserInput {
-    email: string;
+    idPeran: number;
     namaPengguna: string;
+    email: string;
     password: string;
     noTeleponPengguna: string;
     alamatPengguna: string;
-    idPeran: number;
 }
 
 export class UserServices {

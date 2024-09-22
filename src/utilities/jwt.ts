@@ -4,7 +4,7 @@ const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'default_as';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'default_rs';
 
 export function generateAccessToken(idPengguna: number): string {
-    return jwt.sign({ idPengguna }, JWT_ACCESS_SECRET, { expiresIn: '5m' });
+    return jwt.sign({ idPengguna }, JWT_ACCESS_SECRET, { expiresIn: '15m' });
 }
 
 export function generateRefreshToken(idPengguna: number, jti: string): string {
