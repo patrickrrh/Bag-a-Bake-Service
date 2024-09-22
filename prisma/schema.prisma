@@ -59,12 +59,12 @@ model Produk {
   idToko Int
   idKategori Int
   namaProduk String
-  harga Int
+  harga Decimal @db.Decimal(10, 2)
   gambarProduk String
   deskripsiProduk String
   tanggalKedaluwarsa DateTime
   stok Int
-  isActive Int
+  isActive Int @default(1)
   potonganHarga ListPotonganHarga[]
   toko Toko @relation(fields: [idToko], references: [idToko])
   kategori Kategori @relation(fields: [idKategori], references: [idKategori])
@@ -74,7 +74,7 @@ model Produk {
 model ListPotonganHarga {
   idLPH Int @id @default(autoincrement())
   idProduk Int
-  jumlah Int
+  jumlah Decimal @db.Decimal(10, 2)
   produk Produk @relation(fields: [idProduk], references: [idProduk])
 }
 

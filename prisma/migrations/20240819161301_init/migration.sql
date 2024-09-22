@@ -15,6 +15,7 @@ CREATE TABLE "Pengguna" (
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "alamatPengguna" TEXT NOT NULL,
+    "tanggalDaftar" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Pengguna_pkey" PRIMARY KEY ("idPengguna")
 );
@@ -48,12 +49,12 @@ CREATE TABLE "Produk" (
     "idToko" INTEGER NOT NULL,
     "idKategori" INTEGER NOT NULL,
     "namaProduk" TEXT NOT NULL,
-    "harga" INTEGER NOT NULL,
+    "harga" DECIMAL(10,2) NOT NULL,
     "gambarProduk" TEXT NOT NULL,
     "deskripsiProduk" TEXT NOT NULL,
     "tanggalKedaluwarsa" TIMESTAMP(3) NOT NULL,
     "stok" INTEGER NOT NULL,
-    "isActive" INTEGER NOT NULL,
+    "isActive" INTEGER NOT NULL DEFAULT 1,
 
     CONSTRAINT "Produk_pkey" PRIMARY KEY ("idProduk")
 );
@@ -62,7 +63,7 @@ CREATE TABLE "Produk" (
 CREATE TABLE "ListPotonganHarga" (
     "idLPH" SERIAL NOT NULL,
     "idProduk" INTEGER NOT NULL,
-    "jumlah" INTEGER NOT NULL,
+    "jumlah" DECIMAL(10,2) NOT NULL,
 
     CONSTRAINT "ListPotonganHarga_pkey" PRIMARY KEY ("idLPH")
 );
@@ -98,8 +99,16 @@ CREATE TABLE "Favorit" (
     CONSTRAINT "Favorit_pkey" PRIMARY KEY ("idFavorit")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "Pengguna_namaPengguna_key" ON "Pengguna"("namaPengguna");
+-- CreateTable
+CREATE TABLE "RefreshToken" (
+    "jti" TEXT NOT NULL,
+    "hashedToken" TEXT NOT NULL,
+    "idPengguna" INTEGER NOT NULL,
+    "revoked" BOOLEAN NOT NULL DEFAULT false,
+    "createdDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "RefreshToken_pkey" PRIMARY KEY ("jti")
+);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Pengguna_email_key" ON "Pengguna"("email");
@@ -133,3 +142,6 @@ ALTER TABLE "DetailPesanan" ADD CONSTRAINT "DetailPesanan_idPesanan_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "DetailPesanan" ADD CONSTRAINT "DetailPesanan_idProduk_fkey" FOREIGN KEY ("idProduk") REFERENCES "Produk"("idProduk") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_idPengguna_fkey" FOREIGN KEY ("idPengguna") REFERENCES "Pengguna"("idPengguna") ON DELETE RESTRICT ON UPDATE CASCADE;

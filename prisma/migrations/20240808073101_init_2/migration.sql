@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Pengguna" ADD COLUMN     "tanggalDaftar" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
