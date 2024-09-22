@@ -40,7 +40,7 @@ export class ProductServices {
                 }
             }, )
         } catch (error) {
-            throw new Error("Failed to create user")
+            throw new Error("Failed to create product")
         }
     }
 
