@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import cors from 'cors';
+import productRoutes from './routes/productRoutes';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(cors({
 app.use(express.json());
 
 app.use("/api", authRoutes);
+app.use("/api", productRoutes);
 
 const PORT = 3000;
 app.listen(PORT, () => {
