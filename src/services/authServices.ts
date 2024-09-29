@@ -5,7 +5,7 @@ import databaseService from '../script';
 interface RefreshTokenInput {
     jti: string;
     refreshToken: string;
-    idPengguna: number;
+    userId: number;
 }
 
 export class AuthServices {
@@ -15,10 +15,11 @@ export class AuthServices {
                 data: {
                     jti: input.jti,
                     hashedToken: hashToken(input.refreshToken),
-                    idPengguna: input.idPengguna,
+                    userId: input.userId,
                 }
             })
         } catch (error) {
+            console.log("[src][services][AuthServices][addRefreshTokenToWhitelist] ", error)
             throw new Error("Failed to add refresh token to whitelist")
         }
     }
@@ -31,6 +32,7 @@ export class AuthServices {
                 }
             })
         } catch (error) {
+            console.log("[src][services][AuthServices][findRefreshTokenById] ", error)
             throw new Error("Failed to find refresh token")
         }
     }
@@ -46,21 +48,24 @@ export class AuthServices {
                 },
             });
         } catch (error) {
+            console.log("[src][services][AuthServices][deleteRefreshToken] ", error)
             throw new Error("Failed to delete refresh token")
         }
     }
 
-    public async revokeTokens(idPengguna: number): Promise<void> {
+    //function to invalidate refresh token
+    public async revokeTokens(userId: number): Promise<void> {
         try {
             await databaseService.getClient().refreshToken.updateMany({
                 where: {
-                    idPengguna: idPengguna
+                    userId: userId
                 },
                 data: {
                     revoked: true
                 },
             })
         } catch (error) {
+            console.log("[src][services][AuthServices][revokeTokens] ", error)
             throw new Error("Failed to revoke tokens")
         }  
     }
