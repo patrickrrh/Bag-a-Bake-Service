@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import cors from 'cors';
 import productRoutes from './routes/productRoutes';
+import categoryRoutes from './routes/categoryRoutes';
+import regionRoutes from './routes/regionRoutes';
 
 dotenv.config();
 
@@ -16,8 +18,14 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use("/api", authRoutes);
-app.use("/api", productRoutes);
+const apiRouter = express.Router();
+
+apiRouter.use(authRoutes);
+apiRouter.use(productRoutes);
+apiRouter.use(categoryRoutes);
+apiRouter.use(regionRoutes);
+
+app.use('/api', apiRouter);
 
 const PORT = 3000;
 app.listen(PORT, () => {

@@ -9,24 +9,26 @@ export class ProductController {
         try {
             const productData: CreateProductInput = req.body;
 
-            if (!productData.namaProduk ||
-                !productData.harga ||
-                !productData.gambarProduk ||
-                !productData.deskripsiProduk ||
-                !productData.tanggalKedaluwarsa ||
-                !productData.stok ||
-                !productData.potonganHarga || 
-                productData.potonganHarga.length === 0 ||
-                !productData.idToko ||
-                !productData.idKategori
+            if (!productData.productName ||
+                !productData.productPrice ||
+                !productData.productImage ||
+                !productData.productDescription ||
+                !productData.productExpirationDate ||
+                !productData.productStock ||
+                !productData.discount || 
+                productData.discount.length === 0 ||
+                !productData.bakeryId ||
+                !productData.categoryId
             ) {
+                console.log("[src][controllers][ProductController][createProduct] Missing required fields");
                 res.status(400).send("Missing required fields");
                 return;
             }
 
-            for (const potongan of productData.potonganHarga) {
-                if (!potongan.jumlah) {
-                    res.status(400).send("Invalid data in Potongan Harga");
+            for (const disc of productData.discount) {
+                if (!disc.discountAmount) {
+                    console.log("[src][controllers][ProductController][createProduct] Invalid data in Discount");
+                    res.status(400).send("Invalid data in Discount");
                     return;
                 }
             }
@@ -35,64 +37,70 @@ export class ProductController {
 
             res.status(201).json(createdProduct);
         } catch (error) {
+            console.log("[src][controllers][ProductController][createProduct] ", error)
             next(error);
         }
     }
 
     public async getProductById(req: Request, res: Response, next: NextFunction): Promise<void> { 
-
         try {
-            const {idProduk} = req.body;
-            const createdProduct = await productServices.findProductById(idProduk);
+            const { productId } = req.body;
+            const createdProduct = await productServices.findProductById(productId);
 
             if (!createdProduct) {
+                console.log("[src][controllers][ProductController][getProductById] Product ID Not Found");
                 res.status(400).send("Product ID Not Found");
                 return;
             }
 
             res.status(200).json(createdProduct);
         } catch (error) {
+            console.log("[src][controllers][ProductController][getProductById] ", error)
             next(error);
         }
     }
 
     public async updateProductById(req: Request, res: Response, next: NextFunction): Promise<void> { 
         try {
-            const { idProduk } = req.body;
+            const { productId } = req.body;
             const productData: CreateProductInput = req.body;
 
-            if (!idProduk ||
-                !productData.namaProduk ||
-                !productData.harga ||
-                !productData.gambarProduk ||
-                !productData.deskripsiProduk ||
-                !productData.tanggalKedaluwarsa ||
-                !productData.stok ||
-                !productData.potonganHarga || 
-                productData.potonganHarga.length === 0 ||
-                !productData.idToko ||
-                !productData.idKategori
+            if (!productId ||
+                !productData.productName ||
+                !productData.productPrice ||
+                !productData.productImage ||
+                !productData.productDescription ||
+                !productData.productExpirationDate ||
+                !productData.productStock ||
+                !productData.discount || 
+                productData.discount.length === 0 ||
+                !productData.bakeryId ||
+                !productData.categoryId
             ) {
+                console.log("[src][controllers][ProductController][updateProductById] Missing required fields");
                 res.status(400).send("Missing required fields");
                 return;
             }
 
-            for (const potongan of productData.potonganHarga) {
-                if (!potongan.jumlah) {
-                    res.status(400).send("Invalid data in Potongan Harga");
+            for (const disc of productData.discount) {
+                if (!disc.discountAmount) {
+                    console.log("[src][controllers][ProductController][updateProductById] Invalid data in Discount");
+                    res.status(400).send("Invalid data in Discount");
                     return;
                 }
             }
 
-            const updatedProduct = await productServices.updateProductById(idProduk, productData);
+            const updatedProduct = await productServices.updateProductById(productId, productData);
 
             if (!updatedProduct) {
+                console.log("[src][controllers][ProductController][updateProductById] Product ID Not Found");
                 res.status(400).send("Product ID Not Found");
                 return;
             }
 
             res.status(200).json(updatedProduct);
         } catch (error) {
+            console.log("[src][controllers][ProductController][updateProductById] ", error)
             next(error);
         }
     }
@@ -102,6 +110,7 @@ export class ProductController {
             const { keyword } = req.query;
 
             if (!keyword || typeof keyword !== 'string') {
+                console.log("[src][controllers][ProductController][searchProductByKeyword] Keyword is required");
                 res.status(400).send("Keyword is required");
                 return;
             }
@@ -109,34 +118,39 @@ export class ProductController {
             const foundProducts = await productServices.searchProductByKeyword(keyword);
 
             if (foundProducts.length === 0) {
+                console.log("[src][controllers][ProductController][searchProductByKeyword] No products found");
                 res.status(404).send("No products found");
                 return;
             }
 
             res.status(200).json(foundProducts);
         } catch (error) {
+            console.log("[src][controllers][ProductController][searchProductByKeyword] ", error)
             next(error);
         }
     }
 
     public async deleteProductById(req: Request, res: Response, next: NextFunction): Promise<void> { 
         try {
-            const { idProduk } = req.body;
+            const { productId } = req.body;
 
-            if (!idProduk) {
+            if (!productId) {
+                console.log("[src][controllers][ProductController][deleteProductById] Product ID is required");
                 res.status(400).send("Product ID is required");
                 return;
             }
 
-            const deletedProduct = await productServices.deleteProductById(idProduk);
+            const deletedProduct = await productServices.deleteProductById(productId);
 
             if (!deletedProduct) {
+                console.log("[src][controllers][ProductController][deleteProductById] Product not found or could not be deleted");
                 res.status(404).send("Product not found or could not be deleted");
                 return;
             }
 
             res.status(200).send("Product deleted successfully");
         } catch (error) {
+            console.log("[src][controllers][ProductController][deleteProductById] ", error)
             next(error);
         }
     }
@@ -146,6 +160,7 @@ export class ProductController {
             const { categoryName } = req.body;
 
             if (!categoryName) {
+                console.log("[src][controllers][ProductController][getProductsByCategory] Category name is required");
                 res.status(400).send("Category name is required");
                 return;
             }
@@ -154,6 +169,7 @@ export class ProductController {
 
             res.status(200).json(products);
         } catch (error) {
+            console.log("[src][controllers][ProductController][getProductsByCategory] ", error)
             next(error);
         }
     }

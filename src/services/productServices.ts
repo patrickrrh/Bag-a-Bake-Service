@@ -1,116 +1,121 @@
-import { Kategori, ListPotonganHarga, Produk, Toko } from '@prisma/client';
+import { Category, ListDiscount, Product, Bakery } from '@prisma/client';
 import databaseService from '../script';
 
 export interface CreateProductInput {
-    namaProduk: string;
-    harga: number;
-    gambarProduk: string;
-    deskripsiProduk: string;
-    tanggalKedaluwarsa: Date;
-    stok: number;
-    potonganHarga: ListPotonganHarga[];
-    idToko: number;
-    idKategori: number;
+    productName: string;
+    productPrice: number;
+    productImage: string;
+    productDescription: string;
+    productExpirationDate: Date;
+    productStock: number;
+    discount: ListDiscount[];
+    bakeryId: number;
+    categoryId: number;
 }
 
 export class ProductServices {
  
-    public async createProduct(produk: CreateProductInput): Promise<Produk> {
+    public async createProduct(product: CreateProductInput): Promise<Product> {
 
         try {
-            return await databaseService.getClient().produk.create({
+            return await databaseService.getClient().product.create({
                 data: {
-                    namaProduk: produk.namaProduk,
-                    harga: produk.harga,
-                    gambarProduk: produk.gambarProduk,
-                    deskripsiProduk: produk.deskripsiProduk,
-                    tanggalKedaluwarsa: produk.tanggalKedaluwarsa,
-                    stok: produk.stok,
-                    potonganHarga: {
-                        create: produk.potonganHarga.map(potongan => ({
-                            jumlah: potongan.jumlah
+                    productName: product.productName,
+                    productPrice: product.productPrice,
+                    productImage: product.productImage,
+                    productDescription: product.productDescription,
+                    productExpirationDate: product.productExpirationDate,
+                    productStock: product.productStock,
+                    discount: {
+                        create: product.discount.map(disc => ({
+                            discountAmount: disc.discountAmount
                         }))
                     },
-                    idToko: produk.idToko,
-                    idKategori: produk.idKategori
+                    bakeryId: product.bakeryId,
+                    categoryId: product.categoryId
                     
                 },
                 include: {
-                    potonganHarga: true,
+                    discount: true,
                 }
             }, )
         } catch (error) {
+            console.log("[src][services][ProductServices][createProduct] ", error)
             throw new Error("Failed to create product")
         }
     }
 
-    public async findProductById(idProduk: number): Promise<Produk | null> {
-        if (!idProduk) {
-            throw new Error('Id Product is required');
+    public async findProductById(productId: number): Promise<Product | null> {
+        if (!productId) {
+            console.log("[src][services][ProductServices][findProductById] Product ID is required")
+            throw new Error('Product ID is required');
         }
     
         try {
-            return await databaseService.getClient().produk.findUnique({
-                where: { idProduk }
+            return await databaseService.getClient().product.findUnique({
+                where: { productId }
             })
         } catch (error) {
+            console.log("[src][services][ProductServices][findProductById] ", error)
             throw new Error("Failed to find product")
         }
     }
 
-    public async updateProductById(idProduk: number, produk: CreateProductInput): Promise<Produk | null> {
+    public async updateProductById(productId: number, product: CreateProductInput): Promise<Product | null> {
 
-        if (!idProduk) {
-            throw new Error('Id Product is required');
+        if (!productId) {
+            console.log("[src][services][ProductServices][updateProductById] Product ID is required")
+            throw new Error('Product ID is required');
         }
     
         try {
-            const updatedProduct = await databaseService.getClient().produk.update({
-                where: { idProduk },
+            const updatedProduct = await databaseService.getClient().product.update({
+                where: { productId },
                 data: {
-                    namaProduk: produk.namaProduk,
-                    harga: produk.harga,
-                    gambarProduk: produk.gambarProduk,
-                    deskripsiProduk: produk.deskripsiProduk,
-                    tanggalKedaluwarsa: produk.tanggalKedaluwarsa,
-                    stok: produk.stok,
-                    potonganHarga: {
+                    productName: product.productName,
+                    productPrice: product.productPrice,
+                    productImage: product.productImage,
+                    productDescription: product.productDescription,
+                    productExpirationDate: product.productExpirationDate,
+                    productStock: product.productStock,
+                    discount: {
                         deleteMany: {},  
-                        create: produk.potonganHarga.map(potongan => ({
-                            jumlah: potongan.jumlah
+                        create: product.discount.map(disc => ({
+                            discountAmount: disc.discountAmount
                         }))
                     },
-                    idToko: produk.idToko,
-                    idKategori: produk.idKategori
+                    bakeryId: product.bakeryId,
+                    categoryId: product.categoryId
                 },
                 include: {
-                    potonganHarga: true,
+                    discount: true,
                 }
             });
 
             return updatedProduct;
         } catch (error) {
+            console.log("[src][services][ProductServices][updateProductById] ", error)
             throw new Error("Failed to update product");
         }
     }
     
-    public async searchProductByKeyword(keyword: string): Promise<Produk[]> {
+    public async searchProductByKeyword(keyword: string): Promise<Product[]> {
         try {
             const normalizedKeyword = keyword.trim().replace(/\s+/g, ' ');
             const keywordsArray = normalizedKeyword.split(' ');  
             
-            return await databaseService.getClient().produk.findMany({
+            return await databaseService.getClient().product.findMany({
                 where: {
                     OR: keywordsArray.map(word => ({
                         OR: [
                             {
-                                namaProduk: {
+                                productName: {
                                     contains: word,
                                     mode: 'insensitive'
                                 }
                             },
                             {
-                                deskripsiProduk: {
+                                productDescription: {
                                     contains: word,
                                     mode: 'insensitive'
                                 }
@@ -120,52 +125,56 @@ export class ProductServices {
                     isActive: 1
                 },
                 include: {
-                    potonganHarga: true,
-                    kategori: true,
-                    toko: true
+                    discount: true,
+                    category: true,
+                    bakery: true
                 }
             });
         } catch (error) {
+            console.log("[src][services][ProductServices][searchProductByKeyword] ", error)
             throw new Error("Failed to search for products");
         }
     }
 
-    public async deleteProductById(idProduk: number): Promise<Produk | null> {
+    public async deleteProductById(productId: number): Promise<Product | null> {
         try {
-            const existingProduct = await this.findProductById(idProduk);
+            const existingProduct = await this.findProductById(productId);
             if (!existingProduct) {
+                console.log("[src][services][ProductServices][deleteProductById] Product not found");
                 return null;
             }
 
-            await databaseService.getClient().listPotonganHarga.deleteMany({
-                where: { idProduk }
+            await databaseService.getClient().listDiscount.deleteMany({
+                where: { productId }
             });
 
-            return await databaseService.getClient().produk.delete({
-                where: { idProduk }
+            return await databaseService.getClient().product.delete({
+                where: { productId }
             });
 
         } catch (error) {
+            console.log("[src][services][ProductServices][deleteProductById] ", error)
             throw new Error("Failed to delete product");
         }
     }
     
-    public async findProductsByCategory(categoryName: string): Promise<Produk[]> {
+    public async findProductsByCategory(categoryName: string): Promise<Product[]> {
         try {
-            return await databaseService.getClient().produk.findMany({
+            return await databaseService.getClient().product.findMany({
                 where: {
-                    kategori: {
-                        namaKategori: {
+                    category: {
+                        categoryName: {
                             contains: categoryName, 
                         }
                     }
                 },
                 include: {
-                    potonganHarga: true,
-                    kategori: true, 
+                    discount: true,
+                    category: true, 
                 }
             });
         } catch (error) {
+            console.log("[src][services][ProductServices][findProductsByCategory] ", error)
             throw new Error("Failed to find products by category");
         }
     }
