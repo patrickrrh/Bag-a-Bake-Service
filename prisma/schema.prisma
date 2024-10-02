@@ -81,7 +81,7 @@ model ListPotonganHarga {
 model Pesanan {
   idPesanan Int @id @default(autoincrement())
   idPengguna Int
-  tanggalPesanan DateTime
+  tanggalPesanan DateTime @default(now())
   statusPesanan Int
   totalHarga Int
   pengguna Pengguna @relation(fields: [idPengguna], references: [idPengguna])
