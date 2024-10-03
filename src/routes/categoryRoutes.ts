@@ -6,6 +6,6 @@ const router = express.Router();
 const categoryController = new CategoryController();
 
 router.post("/create/category", categoryController.createCategory);
-router.get("/get/category", categoryController.findCategory);
+router.get("/get/category", categoryController.getAvailableCategory);
 
 export default router;
