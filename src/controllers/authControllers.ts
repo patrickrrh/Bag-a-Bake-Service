@@ -1,73 +1,93 @@
 import { NextFunction, Request, Response } from "express";
 import { generateTokens } from "../utilities/jwt";
 import { v4 as uuidv4 } from 'uuid';
-import { UserServices } from "../services/userServices";
+import { CreateUserInput, UserServices } from "../services/userServices";
 import { AuthServices } from "../services/authServices";
+import { CreateBakeryInput, BakeryServices } from "../services/bakeryServices";
 import bycrpt from 'bcrypt';
 import jwt from "jsonwebtoken";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
+const bakeryServices = new BakeryServices();
 
 export class AuthController {
-    public async register(req: Request, res: Response, next: NextFunction): Promise<void> { 
+    public async signUp(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { idPeran, namaPengguna, noTeleponPengguna, email, password, alamatPengguna } = req.body
-            if (( !idPeran || !namaPengguna || !noTeleponPengguna || !email || !password || !alamatPengguna )) {
-                res.status(400)
-                throw new Error('All fields must be filled')
-            }
-    
-            const checkExistingUser = await userServices.findUserByEmail(email);
+            const userData: CreateUserInput = {
+                roleId: req.body.roleId,
+                userName: req.body.userName,
+                userImage: req.body.userImage,
+                userPhoneNumber: req.body.userPhoneNumber,
+                email: req.body.email,
+                password: req.body.password,
+                regionId: req.body.regionId,
+            };
+                
+            const checkExistingUser = await userServices.findUserByEmail(userData.email);
             if (checkExistingUser) {
-                res.status(400)
-                throw new Error('Email has already been taken')
+                console.log("[src][controllers][AuthController][signUp] Email has already been taken");
+                res.status(400).json({ error: 'Email has already been taken' });
+                return;
             }
-    
-            const pengguna = await userServices.createUser({
-                idPeran,
-                email,
-                namaPengguna,
-                noTeleponPengguna,
-                password,
-                alamatPengguna
-            });
+
+            const user = await userServices.createUser(userData);
+
+            if (user.roleId === 2) {
+                const bakeryData: CreateBakeryInput = {
+                    userId: user.userId,
+                    bakeryName: req.body.bakeryName,
+                    bakeryImage: req.body.bakeryImage,
+                    bakeryDescription: req.body.bakeryDescription,
+                    bakeryPhoneNumber: req.body.bakeryPhoneNumber,
+                    openingTime: req.body.openingTime,
+                    closingTime: req.body.closingTime,
+                    regionId: req.body.regionId, 
+                };
+                
+                await bakeryServices.createBakery({
+                    ...bakeryData,
+                    userId: user.userId,
+                    regionId: req.body.bakeryRegionId,
+                })
+            }
+
             const jti = uuidv4();
-            const { accessToken, refreshToken } = generateTokens(pengguna.idPengguna, jti);
-            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, idPengguna: pengguna.idPengguna });
-    
+            const { accessToken, refreshToken } = generateTokens(user.userId, jti);
+            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, userId: user.userId });
+
             res.status(201).json({ accessToken, refreshToken });
         } catch (error) {
+            console.log("[src][controllers][AuthController][signUp] ", error);
             next(error);
         }
     }
 
-    public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public async signIn(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { email, password } = req.body
-            if (!email || !password) {
-                res.status(400)
-                throw new Error('All fields must be filled')
-            }
 
             const checkExistingUser = await userServices.findUserByEmail(email);
             if (!checkExistingUser) {
-                res.status(400)
-                throw new Error('Email is not registered')
+                console.log("[src][controllers][AuthController][signIn] Email is not registered");
+                res.status(400).json({ error: 'Email is not registered' });
+                return;
             }
 
             const checkPassword = await bycrpt.compare(password, checkExistingUser.password);
             if (!checkPassword) {
-                res.status(400)
-                throw new Error('Password is incorrect')
+                console.log("[src][controllers][AuthController][signIn] Password is incorrect");
+                res.status(400).json({ error: 'Password is incorrect' });
+                return;
             }
 
             const jti = uuidv4();
-            const { accessToken, refreshToken } = generateTokens(checkExistingUser.idPengguna, jti);
-            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, idPengguna: checkExistingUser.idPengguna });
+            const { accessToken, refreshToken } = generateTokens(checkExistingUser.userId, jti);
+            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, userId: checkExistingUser.userId });
 
             res.status(200).json({ accessToken, refreshToken });
         } catch (error) {
+            console.log("[src][controllers][AuthController][signIn] ", error);
             next(error);
         }
     }
@@ -76,30 +96,34 @@ export class AuthController {
         try {
             const { refreshToken } = req.body
             if (!refreshToken) {
-                res.status(400)
-                throw new Error('Missing refresh token')
+                console.log("[src][controllers][AuthController][refreshAuthentication] Missing refresh token");
+                res.status(400).json({ error: 'Missing refresh token' })
+                return;
             }
 
-            const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { idPengguna: number, jti: string };
+            const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { userId: number, jti: string };
             const getRefreshToken = await authServices.findRefreshTokenById(payload.jti);
             if (!getRefreshToken || getRefreshToken.revoked === true) {
-                res.status(401)
-                throw new Error('Unauthorized')
+                console.log("[src][controllers][AuthController][refreshAuthentication] Refresh token is invalid");
+                res.status(401).json({ error: 'Unauthorized' })
+                return;
             }
 
-            const getUser = await userServices.findUserById(payload.idPengguna);
+            const getUser = await userServices.findUserById(payload.userId);
             if (!getUser) {
-                res.status(401)
-                throw new Error('Unauthorized')
+                console.log("[src][controllers][AuthController][refreshAuthentication] User not found");
+                res.status(401).json({ error: 'Unauthorized' })
+                return;
             }
 
             await authServices.deleteRefreshToken(payload.jti);
             const jti = uuidv4();
-            const { accessToken, refreshToken: newRefreshToken } = generateTokens(getUser.idPengguna, jti);
-            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken: newRefreshToken, idPengguna: getUser.idPengguna });  
+            const { accessToken, refreshToken: newRefreshToken } = generateTokens(getUser.userId, jti);
+            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken: newRefreshToken, userId: getUser.userId });
 
             res.status(200).json({ accessToken, refreshToken: newRefreshToken });
         } catch (error) {
+            console.log("[src][controllers][AuthController][refreshAuthentication] ", error);
             next(error);
         }
     }

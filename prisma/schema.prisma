@@ -13,103 +13,118 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Peran {
-  idPeran Int @id @default(autoincrement())
-  namaPeran String 
-  pengguna Pengguna[]
+model Role {
+  roleId Int @id @default(autoincrement())
+  roleName String 
+  user User[]
 }
 
-model Pengguna {
-  idPengguna Int @id @default(autoincrement())
-  idPeran Int
-  peran Peran @relation(fields: [idPeran], references: [idPeran])
-  namaPengguna String
-  noTeleponPengguna String
+model User {
+  userId Int @id @default(autoincrement())
+  roleId Int
+  role Role @relation(fields: [roleId], references: [roleId])
+  userName String
+  userImage String?
+  userPhoneNumber String?
   email String @unique
   password String
-  alamatPengguna String
-  toko Toko?
-  pesanan Pesanan[]
-  tanggalDaftar DateTime @default(now())
-  refreshTokens RefreshToken[]
+  regionId Int?
+  regionUser Region? @relation(fields: [regionId], references: [regionId])
+  bakery Bakery?
+  order Order[]
+  signUpDate DateTime @default(now())
+  refreshToken RefreshToken[]
+  Favorite Favorite[]
 }
 
-model Toko {
-  idToko Int @id @default(autoincrement())
-  idPengguna Int @unique
-  pengguna Pengguna @relation(fields: [idPengguna], references: [idPengguna])
-  namaToko String
-  gambarToko String
-  deskripsiToko String
-  jamBuka DateTime
-  jamTutup DateTime
-  alamatToko String
-  noTeleponToko String
-  produk Produk[]
+model Bakery {
+  bakeryId Int @id @default(autoincrement())
+  userId Int @unique
+  user User @relation(fields: [userId], references: [userId])
+  bakeryName String
+  bakeryImage String
+  bakeryDescription String
+  bakeryPhoneNumber String
+  openingTime DateTime
+  closingTime DateTime
+  regionId Int
+  regionBakery Region @relation(fields: [regionId], references: [regionId])
+  product Product[]
+  favorite Favorite[]
 }
 
-model Kategori {
-  idKategori Int @id @default(autoincrement())
-  namaKategori String
-  produk Produk[]
+model Category {
+  categoryId Int @id @default(autoincrement())
+  categoryName String
+  categoryImage String
+  product Product[]
 }
 
-model Produk {
-  idProduk Int @id @default(autoincrement())
-  idToko Int
-  idKategori Int
-  namaProduk String
-  harga Int
-  gambarProduk String
-  deskripsiProduk String
-  tanggalKedaluwarsa DateTime
-  stok Int
-  isActive Int
-  potonganHarga ListPotonganHarga[]
-  toko Toko @relation(fields: [idToko], references: [idToko])
-  kategori Kategori @relation(fields: [idKategori], references: [idKategori])
-  detailPesanan DetailPesanan[]
+model Product {
+  productId Int @id @default(autoincrement())
+  bakeryId Int
+  bakery Bakery @relation(fields: [bakeryId], references: [bakeryId])
+  categoryId Int
+  category Category @relation(fields: [categoryId], references: [categoryId])
+  productName String
+  productPrice Decimal @db.Decimal(10, 2)
+  productImage String
+  productDescription String
+  productExpirationDate DateTime
+  productStock Int
+  isActive Int @default(1)
+  discount ListDiscount[]
+  orderDetail OrderDetail[]
 }
 
-model ListPotonganHarga {
-  idLPH Int @id @default(autoincrement())
-  idProduk Int
-  jumlah Int
-  produk Produk @relation(fields: [idProduk], references: [idProduk])
+model ListDiscount {
+  discountId Int @id @default(autoincrement())
+  productId Int
+  product Product @relation(fields: [productId], references: [productId])
+  discountAmount Decimal @db.Decimal(10, 2)
 }
 
-model Pesanan {
-  idPesanan Int @id @default(autoincrement())
-  idPengguna Int
-  tanggalPesanan DateTime @default(now())
-  statusPesanan Int
-  totalHarga Int
-  pengguna Pengguna @relation(fields: [idPengguna], references: [idPengguna])
-  detailPesanan DetailPesanan[]
+model Order {
+  orderId Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [userId])
+  orderDate DateTime
+  orderStatus Int
+  orderTotalPrice Int
+  orderDetail OrderDetail[]
 }
 
-model DetailPesanan {
-  idDetailPesanan Int @id @default(autoincrement())
-  idPesanan Int
-  idProduk Int
-  jumlah Int
-  jumlahHarga Int
-  pesanan Pesanan @relation(fields: [idPesanan], references: [idPesanan])
-  produk Produk @relation(fields: [idProduk], references: [idProduk])
+model OrderDetail {
+  orderDetailId Int @id @default(autoincrement())
+  orderId Int
+  order Order @relation(fields: [orderId], references: [orderId])
+  productId Int
+  product Product @relation(fields: [productId], references: [productId])
+  productQuantity Int
+  productTotalPrice Int
 }
 
-model Favorit {
-  idFavorit Int @id @default(autoincrement())
-  idPengguna Int
-  idToko Int
-  @@unique([idPengguna, idToko])
+model Favorite {
+  favoriteId Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [userId])
+  bakeryId Int
+  bakery Bakery @relation(fields: [bakeryId], references: [bakeryId])
+  @@unique([userId, bakeryId])
 }
 
 model RefreshToken {
   jti String @id @default(uuid())
   hashedToken String
-  idPengguna Int
+  userId Int
+  user User @relation(fields: [userId], references: [userId])
   revoked Boolean @default(false)
   createdDate DateTime @default(now())
-  pengguna Pengguna @relation(fields: [idPengguna], references: [idPengguna])
+}
+
+model Region {
+  regionId Int @id @default(autoincrement())
+  regionName String
+  user User[]
+  bakery Bakery[]
 }

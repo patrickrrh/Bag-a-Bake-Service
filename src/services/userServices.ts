@@ -1,55 +1,62 @@
 import bycrpt from 'bcrypt';
-import { Pengguna } from '@prisma/client';
+import { User } from '@prisma/client';
 import databaseService from '../script';
+import { json } from 'express';
 
-interface CreateUserInput {
+export interface CreateUserInput {
+    roleId: number;
+    regionId?: number;
+    userName: string;
+    userImage?: string;
+    userPhoneNumber?: string;
     email: string;
-    namaPengguna: string;
     password: string;
-    noTeleponPengguna: string;
-    alamatPengguna: string;
-    idPeran: number;
 }
 
 export class UserServices {
-    public async findUserByEmail(email: string): Promise<Pengguna | null> {
+    public async findUserByEmail(email: string): Promise<User | null> {
         if (!email) {
+            console.log("[src][services][UserServices][findUserByEmail] Email is required")
             throw new Error('Email is required');
         }
 
         try {
-            return databaseService.getClient().pengguna.findUnique({
+            return databaseService.getClient().user.findUnique({
                 where: {
                     email
                 }
             })
         } catch (error) {
+            console.log("[src][services][UserServices][findUserByEmail]", error)
             throw new Error("Failed to find user")
         }
     }
 
-    public async createUser(pengguna: CreateUserInput): Promise<Pengguna> {
-        pengguna.password = bycrpt.hashSync(pengguna.password, 12);
+    public async createUser(user: CreateUserInput): Promise<User> {
+        user.password = bycrpt.hashSync(user.password, 12);
 
         try {
-            return await databaseService.getClient().pengguna.create({
-                data: pengguna
+            return await databaseService.getClient().user.create({
+                data: user
             })
         } catch (error) {
+            console.log("[src][services][UserServices][createUser]", error)
             throw new Error("Failed to create user")
         }
     }
 
-    public async findUserById(idPengguna: number): Promise<Pengguna | null> {
-        if (!idPengguna) {
-            throw new Error('Id pengguna is required');
+    public async findUserById(userId: number): Promise<User | null> {
+        if (!userId) {
+            console.log("[src][services][UserServices][findUserById] User ID is required")
+            throw new Error('User ID is required');
         }
     
         try {
-            return await databaseService.getClient().pengguna.findUnique({
-                where: { idPengguna }
+            return await databaseService.getClient().user.findUnique({
+                where: { userId }
             })
         } catch (error) {
+            console.log("[src][services][UserServices][findUserById]", error)
             throw new Error("Failed to find user")
         }
     }
