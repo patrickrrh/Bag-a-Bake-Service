@@ -45,8 +45,8 @@ model Bakery {
   bakeryImage String
   bakeryDescription String
   bakeryPhoneNumber String
-  openingTime DateTime
-  closingTime DateTime
+  openingTime String
+  closingTime String
   regionId Int
   regionBakery Region @relation(fields: [regionId], references: [regionId])
   product Product[]

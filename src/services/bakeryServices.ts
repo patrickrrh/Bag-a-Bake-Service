@@ -8,16 +8,13 @@ export interface CreateBakeryInput {
     bakeryPhoneNumber: string;
     bakeryImage: string;
     bakeryDescription: string;
-    openingTime: Date;
-    closingTime: Date;
+    openingTime: string;
+    closingTime: string;
 }
 
 export class BakeryServices {
     public async createBakery(bakery: CreateBakeryInput): Promise<Bakery> {
         try {
-            bakery.openingTime = new Date(bakery.openingTime);
-            bakery.closingTime = new Date(bakery.closingTime);
-
             return await databaseService.getClient().bakery.create({
                 data: bakery
             })
