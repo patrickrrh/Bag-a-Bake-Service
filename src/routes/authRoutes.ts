@@ -8,6 +8,7 @@ const authController = new AuthController();
 router.post("/sign_up", authController.signUp);
 router.post("/sign_in", authController.signIn);
 router.post("/refresh_token", authController.refreshAuthentication);
-router.post("/check_existing_email", authController.checkExistingEmail);
+router.post("/is_email_registered", authController.isEmailRegistered);
+router.post("/check_account", authController.checkAccount);
 
 export default router

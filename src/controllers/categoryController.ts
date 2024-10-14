@@ -25,7 +25,10 @@ export class CategoryController {
     public async getAvailableCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const category = await categoryServices.getAvailableCategory();
-            res.status(200).json(category);
+            res.status(200).json({
+                status: 200,
+                data: category
+            });
         } catch (error) {
             console.log("[src][controllers][CategoryController][findCategory] ", error);
             next(error);
