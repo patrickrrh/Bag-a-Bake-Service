@@ -6,26 +6,56 @@ import { AuthServices } from "../services/authServices";
 import { CreateBakeryInput, BakeryServices } from "../services/bakeryServices";
 import bycrpt from 'bcrypt';
 import jwt from "jsonwebtoken";
+import { User } from "@prisma/client";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
 const bakeryServices = new BakeryServices();
 
 export class AuthController {
-    public async checkExistingEmail(req: Request, res: Response, next: NextFunction): Promise<boolean> {
+
+    public async isEmailRegistered (req: Request, res: Response, next: NextFunction): Promise<boolean> {
         try {
             const { email } = req.body
             const user = await userServices.findUserByEmail(email);
             if (user) {
-                console.log("[src][controllers][AuthController][signUp] Email has already been taken");
-                res.status(400).json({ error: 'Email has already been taken' });
+                console.log("[src][controllers][AuthController][isEmailRegistered] Email is used");
+                res.status(400).json({ error: 'Email sudah terdaftar' });
                 return true;
             }
-            return false;
+
+            res.status(200).send();
+            return true;
         } catch (error) {
-            console.log("[src][controllers][AuthController][checkExistingEmail] ", error);
+            console.log("[src][controllers][AuthController][isEmailRegistered] ", error);
             next(error);
             return true;
+        }
+    }
+    
+    public async checkAccount (req: Request, res: Response, next: NextFunction): Promise<User | boolean> {
+        try {
+            const { email, password } = req.body
+            const user = await userServices.findUserByEmail(email);
+            if (!user) {
+                console.log("[src][controllers][AuthController][checkAccount] Email is not registered");
+                res.status(404).json({ error: 'Email tidak terdaftar' });
+                return false;
+            }
+
+            const checkPassword = await bycrpt.compare(password, user.password);
+            if (!checkPassword) {
+                console.log("[src][controllers][AuthController][checkAccount] Password is incorrect");
+                res.status(400).json({ error: 'Password salah' });
+                return false;
+            }
+
+            res.status(200).json({ data: user });
+            return user;
+        } catch (error) {
+            console.log("[src][controllers][AuthController][checkAccount] ", error);
+            next(error);
+            return false;
         }
     }
 
@@ -41,7 +71,7 @@ export class AuthController {
                 regionId: req.body.regionId,
             };
 
-            const checkExistingUser = await this.checkExistingEmail(req, res, next);
+            const checkExistingUser = await userServices.findUserByEmail(userData.email);
             if (checkExistingUser) {
                 return;
             }
@@ -78,27 +108,13 @@ export class AuthController {
         }
     }
 
-    public async signIn(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public signIn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { email, password } = req.body
-
-            const checkExistingUser = await userServices.findUserByEmail(email);
-            if (!checkExistingUser) {
-                console.log("[src][controllers][AuthController][signIn] Email is not registered");
-                res.status(400).json({ error: 'Email is not registered' });
-                return;
-            }
-
-            const checkPassword = await bycrpt.compare(password, checkExistingUser.password);
-            if (!checkPassword) {
-                console.log("[src][controllers][AuthController][signIn] Password is incorrect");
-                res.status(400).json({ error: 'Password is incorrect' });
-                return;
-            }
+            const { userId } = req.body
 
             const jti = uuidv4();
-            const { accessToken, refreshToken } = generateTokens(checkExistingUser.userId, jti);
-            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, userId: checkExistingUser.userId });
+            const { accessToken, refreshToken } = generateTokens(userId, jti);
+            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, userId: userId });
 
             res.status(200).json({ accessToken, refreshToken });
         } catch (error) {
