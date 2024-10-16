@@ -45,12 +45,13 @@ model Bakery {
   bakeryImage String
   bakeryDescription String
   bakeryPhoneNumber String
-  openingTime DateTime
-  closingTime DateTime
+  openingTime String
+  closingTime String
   regionId Int
   regionBakery Region @relation(fields: [regionId], references: [regionId])
   product Product[]
   favorite Favorite[]
+  order Order[]
 }
 
 model Category {
@@ -87,9 +88,11 @@ model ListDiscount {
 model Order {
   orderId Int @id @default(autoincrement())
   userId Int
+  bakeryId Int
   user User @relation(fields: [userId], references: [userId])
-  orderDate DateTime
-  orderStatus Int
+  bakery Bakery @relation(fields: [bakeryId], references: [bakeryId])
+  orderDate DateTime @default(now())
+  orderStatus Int @default(0)
   orderTotalPrice Int
   orderDetail OrderDetail[]
 }

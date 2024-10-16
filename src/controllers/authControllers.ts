@@ -12,6 +12,23 @@ const authServices = new AuthServices();
 const bakeryServices = new BakeryServices();
 
 export class AuthController {
+    public async checkExistingEmail(req: Request, res: Response, next: NextFunction): Promise<boolean> {
+        try {
+            const { email } = req.body
+            const user = await userServices.findUserByEmail(email);
+            if (user) {
+                console.log("[src][controllers][AuthController][signUp] Email has already been taken");
+                res.status(400).json({ error: 'Email has already been taken' });
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log("[src][controllers][AuthController][checkExistingEmail] ", error);
+            next(error);
+            return true;
+        }
+    }
+
     public async signUp(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const userData: CreateUserInput = {
@@ -23,11 +40,9 @@ export class AuthController {
                 password: req.body.password,
                 regionId: req.body.regionId,
             };
-                
-            const checkExistingUser = await userServices.findUserByEmail(userData.email);
+
+            const checkExistingUser = await this.checkExistingEmail(req, res, next);
             if (checkExistingUser) {
-                console.log("[src][controllers][AuthController][signUp] Email has already been taken");
-                res.status(400).json({ error: 'Email has already been taken' });
                 return;
             }
 
@@ -42,9 +57,9 @@ export class AuthController {
                     bakeryPhoneNumber: req.body.bakeryPhoneNumber,
                     openingTime: req.body.openingTime,
                     closingTime: req.body.closingTime,
-                    regionId: req.body.regionId, 
+                    regionId: req.body.regionId,
                 };
-                
+
                 await bakeryServices.createBakery({
                     ...bakeryData,
                     userId: user.userId,

@@ -18,7 +18,7 @@ export class CategoryServices {
         }
     }
 
-    public async findCategory(): Promise<Category[]> {
+    public async getAvailableCategory(): Promise<Category[]> {
         try {
             return databaseService.getClient().category.findMany()
         } catch (error) {

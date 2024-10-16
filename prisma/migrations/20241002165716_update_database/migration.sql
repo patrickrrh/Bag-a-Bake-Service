@@ -167,3 +167,4 @@ ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_bakeryId_fkey" FOREIGN KEY ("bak
 
 -- AddForeignKey
 ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+

@@ -7,19 +7,46 @@ export class OrderCustomerController {
 
     public async createOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { idPengguna, statusPesanan, totalHarga, detailPesanan } = req.body
-            if (( !idPengguna || !statusPesanan || !totalHarga || !detailPesanan )) {
+            const { userId, orderTotalPrice, orderDetail, bakeryId } = req.body
+            if (( !userId || !orderTotalPrice || !orderDetail )) {
                 res.status(400)
                 throw new Error('All fields must be filled')
             }
             const order = await orderCustomerServices.createOrder({
-                idPengguna,
-                statusPesanan,
-                totalHarga,
-                detailPesanan
+                userId,
+                orderTotalPrice,
+                orderDetail,
+                bakeryId
             });
             res.status(201).json(order);
         } catch (error) {
+            console.log("[src][controllers][OrderCustomerController][createOrder] ", error);
+            next(error);
+        }
+    }
+
+    public async getOrderByStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { orderStatus } = req.body
+            const orders = await orderCustomerServices.getOrderByStatus(orderStatus);
+
+            const result = orders.map(order => {
+                const totalQuantity = order.orderDetail.reduce(
+                    (sum, detail) => sum + detail.productQuantity, 
+                    0
+                );
+                return {
+                    ...order,
+                    totalQuantity,
+                };
+            });
+
+            res.status(200).json({
+                status: 200,
+                data: orders
+            });
+        } catch (error) {
+            console.log("[src][controllers][OrderCustomerController][getOrderByStatus] ", error);
             next(error);
         }
     }

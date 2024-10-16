@@ -1,46 +1,47 @@
 import databaseService from '../script';
-import { DetailPesanan, Pesanan } from '@prisma/client';
+import { OrderDetail, Order } from '@prisma/client';
 
 interface CreateInputOrderCustomer {
-    idPengguna: number;
-    statusPesanan: number;
-    totalHarga: number;
-    detailPesanan: DetailPesanan[];
+    userId: number;
+    orderTotalPrice: number;
+    orderDetail: OrderDetail[];
+    bakeryId: number;
 }
 
 export class OrderCustomerServices {
-    public async createOrder(order: CreateInputOrderCustomer): Promise<Pesanan> {
+    public async createOrder(order: CreateInputOrderCustomer): Promise<Order> {
         try {
-            return await databaseService.getClient().pesanan.create({
+            return await databaseService.getClient().order.create({
                 data: {
-                    idPengguna: order.idPengguna,
-                    statusPesanan: order.statusPesanan,
-                    totalHarga: order.totalHarga,
-                    detailPesanan: {
-                        create: order.detailPesanan.map(detail => ({
-                            idProduk: detail.idProduk,
-                            jumlah: detail.jumlah,
-                            jumlahHarga: detail.jumlahHarga,
+                    userId: order.userId,
+                    orderTotalPrice: order.orderTotalPrice,
+                    orderDetail: {
+                        create: order.orderDetail.map(detail => ({
+                            productId: detail.productId,
+                            productQuantity: detail.productQuantity,
+                            productTotalPrice: detail.productTotalPrice,
                         }))
-                    }
+                    },
+                    bakeryId: order.bakeryId
                 },
                 include: {
-                    detailPesanan: true,
+                    orderDetail: true,
                 }
             });
         } catch (err) {
             throw new Error("Failed to create order");
         }
     }
-    
-    public async getOrderByStatus(statusPesanan: number): Promise<Pesanan[]> {
+
+    public async getOrderByStatus(orderStatus: number): Promise<Order[]> {
         try {
-            const orders = await databaseService.getClient().pesanan.findMany({
+            const orders = await databaseService.getClient().order.findMany({
                 where: {
-                    statusPesanan: statusPesanan,
+                    orderStatus: orderStatus,
                 },
                 include: {
-                    detailPesanan: true,
+                    orderDetail: true,
+                    bakery: true
                 },
             });
             return orders;
@@ -48,15 +49,15 @@ export class OrderCustomerServices {
             throw new Error("Failed to retrieve orders by status");
         }
     }
-    
-    public async getOrderDetailById(idPesanan: number): Promise<Pesanan | null> {
+
+    public async getOrderDetailById(orderId: number): Promise<Order | null> {
         try {
-            const order = await databaseService.getClient().pesanan.findUnique({
+            const order = await databaseService.getClient().order.findUnique({
                 where: {
-                    idPesanan: idPesanan,
+                    orderId: orderId,
                 },
                 include: {
-                    detailPesanan: true,
+                    orderDetail: true,
                 },
             });
             return order;

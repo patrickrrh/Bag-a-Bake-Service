@@ -22,9 +22,9 @@ export class CategoryController {
         }
     }
 
-    public async findCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public async getAvailableCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const category = await categoryServices.findCategory();
+            const category = await categoryServices.getAvailableCategory();
             res.status(200).json(category);
         } catch (error) {
             console.log("[src][controllers][CategoryController][findCategory] ", error);
