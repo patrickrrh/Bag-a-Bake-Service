@@ -5,6 +5,7 @@ import cors from 'cors';
 import productRoutes from './routes/productRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import regionRoutes from './routes/regionRoutes';
+import orderCustomerRoutes from './routes/orderCustomerRoutes';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ apiRouter.use(categoryRoutes);
 apiRouter.use(regionRoutes);
 
 app.use('/api', apiRouter);
+app.use("/api", orderCustomerRoutes);
 
 const PORT = 3000;
 app.listen(PORT, () => {
