@@ -93,7 +93,6 @@ model Order {
   bakery Bakery @relation(fields: [bakeryId], references: [bakeryId])
   orderDate DateTime @default(now())
   orderStatus Int @default(0)
-  orderTotalPrice Int
   orderDetail OrderDetail[]
 }
 
@@ -104,7 +103,6 @@ model OrderDetail {
   productId Int
   product Product @relation(fields: [productId], references: [productId])
   productQuantity Int
-  productTotalPrice Int
 }
 
 model Favorite {

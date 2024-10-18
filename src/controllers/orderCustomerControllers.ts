@@ -14,7 +14,6 @@ export class OrderCustomerController {
             }
             const order = await orderCustomerServices.createOrder({
                 userId,
-                orderTotalPrice,
                 orderDetail,
                 bakeryId
             });
@@ -30,20 +29,29 @@ export class OrderCustomerController {
             const { orderStatus } = req.body
             const orders = await orderCustomerServices.getOrderByStatus(orderStatus);
 
+            console.log(orders)
+
             const result = orders.map(order => {
                 const totalQuantity = order.orderDetail.reduce(
-                    (sum, detail) => sum + detail.productQuantity, 
+                    (sum, detail) => sum + detail.productQuantity,
                     0
                 );
-                return {
-                    ...order,
-                    totalQuantity,
+    
+                const totalOrderPrice = order.orderDetail.reduce(
+                    (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 
+                    0
+                );
+    
+                return { 
+                    ...order, 
+                    totalQuantity, 
+                    totalOrderPrice 
                 };
             });
 
             res.status(200).json({
                 status: 200,
-                data: orders
+                data: result
             });
         } catch (error) {
             console.log("[src][controllers][OrderCustomerController][getOrderByStatus] ", error);

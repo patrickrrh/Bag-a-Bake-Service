@@ -1,9 +1,18 @@
 import databaseService from '../script';
 import { OrderDetail, Order } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
+type OrderWithDetails = Prisma.OrderGetPayload<{
+    include: {
+        orderDetail: {
+            include: {
+                product: true;
+            };
+        };
+    };
+}>;
 interface CreateInputOrderCustomer {
     userId: number;
-    orderTotalPrice: number;
     orderDetail: OrderDetail[];
     bakeryId: number;
 }
@@ -14,12 +23,10 @@ export class OrderCustomerServices {
             return await databaseService.getClient().order.create({
                 data: {
                     userId: order.userId,
-                    orderTotalPrice: order.orderTotalPrice,
                     orderDetail: {
                         create: order.orderDetail.map(detail => ({
                             productId: detail.productId,
                             productQuantity: detail.productQuantity,
-                            productTotalPrice: detail.productTotalPrice,
                         }))
                     },
                     bakeryId: order.bakeryId
@@ -33,22 +40,26 @@ export class OrderCustomerServices {
         }
     }
 
-    public async getOrderByStatus(orderStatus: number): Promise<Order[]> {
+    public async getOrderByStatus(orderStatus: number): Promise<OrderWithDetails[]> {
         try {
             const orders = await databaseService.getClient().order.findMany({
-                where: {
-                    orderStatus: orderStatus,
-                },
+                where: { orderStatus },
                 include: {
-                    orderDetail: true,
-                    bakery: true
+                    orderDetail: {
+                        include: {
+                            product: true, // Include related Product model
+                        },
+                    },
+                    bakery: true, // Include bakery details if needed
                 },
             });
+
             return orders;
         } catch (err) {
             throw new Error("Failed to retrieve orders by status");
         }
     }
+    
 
     public async getOrderDetailById(orderId: number): Promise<Order | null> {
         try {
