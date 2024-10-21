@@ -7,6 +7,6 @@ const favoriteController = new FavoriteController();
 
 router.post("/add/favorite", favoriteController.addFavorite);
 router.delete("/remove/favorite", favoriteController.removeFavorite);
-router.get("/get/favorite", favoriteController.findAllFavorite);
+router.post("/get/favorite", favoriteController.findAllFavorite);
 
 export default router;

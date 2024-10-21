@@ -41,7 +41,11 @@ export class FavoriteServices {
                     userId
                 },
                 include: {
-                    bakery: true
+                    bakery: {
+                        include: {
+                            regionBakery: true
+                        }
+                    }
                 }
             })
         } catch (error) {

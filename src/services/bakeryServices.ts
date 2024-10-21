@@ -82,7 +82,12 @@ export class BakeryServices {
                     productId: productId,
                 },
                 include: {
-                    bakery: true,
+                    bakery: {
+                        include: {
+                            regionBakery: true,
+                            product: true
+                        }
+                    },
                 },
             });
 
