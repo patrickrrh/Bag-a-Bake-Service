@@ -51,6 +51,7 @@ model Bakery {
   regionBakery Region @relation(fields: [regionId], references: [regionId])
   product Product[]
   favorite Favorite[]
+  order Order[]
 }
 
 model Category {
@@ -87,10 +88,11 @@ model ListDiscount {
 model Order {
   orderId Int @id @default(autoincrement())
   userId Int
+  bakeryId Int
   user User @relation(fields: [userId], references: [userId])
-  orderDate DateTime
-  orderStatus Int
-  orderTotalPrice Int
+  bakery Bakery @relation(fields: [bakeryId], references: [bakeryId])
+  orderDate DateTime @default(now())
+  orderStatus Int @default(0)
   orderDetail OrderDetail[]
 }
 
@@ -101,7 +103,6 @@ model OrderDetail {
   productId Int
   product Product @relation(fields: [productId], references: [productId])
   productQuantity Int
-  productTotalPrice Int
 }
 
 model Favorite {
