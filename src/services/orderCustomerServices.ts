@@ -61,19 +61,21 @@ export class OrderCustomerServices {
     }
     
 
-    public async getOrderDetailById(orderId: number): Promise<Order | null> {
+    public async getOrderDetailById(orderId: number): Promise<OrderWithDetails | null> {
         try {
             const order = await databaseService.getClient().order.findUnique({
-                where: {
-                    orderId: orderId,
-                },
+                where: { orderId },
                 include: {
-                    orderDetail: true,
+                    orderDetail: {
+                        include: {
+                            product: true, // Include product to access productPrice
+                        },
+                    },
                 },
             });
             return order;
         } catch (err) {
             throw new Error("Failed to retrieve order details by ID");
         }
-    }
+    }    
 }
