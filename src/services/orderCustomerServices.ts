@@ -60,7 +60,6 @@ export class OrderCustomerServices {
         }
     }
     
-
     public async getOrderDetailById(orderId: number): Promise<Order | null> {
         try {
             const order = await databaseService.getClient().order.findUnique({

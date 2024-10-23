@@ -2,21 +2,22 @@
 INSERT INTO "Role" ("roleId", "roleName")
 VALUES 
     (1, 'Pembeli'),
-    (2, 'Penjual');
+    (2, 'Pemilik Bakeri');
 
 -- Insert into "Region"
 INSERT INTO "Region" ("regionId", "regionName")
 VALUES
-    (1, 'BSD'),
-    (2, 'GS'),
-    (3, 'ALS');
+    (1, 'Alam Sutera'),
+    (2, 'Gading Serpong'),
+    (3, 'BSD');
 
 -- Insert into "Category"
 INSERT INTO "Category" ("categoryId", "categoryName", "categoryImage")
 VALUES
-    (1, 'Cakes', 'https://example.com/category1.jpg'),
-    (2, 'Bread', 'https://example.com/category2.jpg'),
-    (3, 'Pastries', 'https://example.com/category3.jpg');
+    (1, 'Roti', 'https://example.com/category1.jpg'),
+    (2, 'Pasteri', 'https://example.com/category2.jpg'),
+    (3, 'Kue', 'https://example.com/category3.jpg'),
+    (4, 'Lainnya', 'https://example.com/category4.jpg');
 
 -- Insert into "User"
 INSERT INTO "User" ("userId", "roleId", "userName", "userImage", "userPhoneNumber", "email", "password", "regionId")

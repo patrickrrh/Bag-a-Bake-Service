@@ -53,7 +53,12 @@ export class UserServices {
     
         try {
             return await databaseService.getClient().user.findUnique({
-                where: { userId }
+                where: { 
+                    userId
+                 },
+                 include: {
+                    regionUser: true
+                 }
             })
         } catch (error) {
             console.log("[src][services][UserServices][findUserById]", error)

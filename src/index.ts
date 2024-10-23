@@ -5,7 +5,10 @@ import cors from 'cors';
 import productRoutes from './routes/productRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import regionRoutes from './routes/regionRoutes';
+import bakeryRoutes from './routes/bakeryRoutes';
+import favoriteRoutes from './routes/favoriteRoutes';
 import orderCustomerRoutes from './routes/orderCustomerRoutes';
+import orderSellerRoutes from './routes/orderSellerRoutes';
 
 dotenv.config();
 
@@ -25,11 +28,14 @@ apiRouter.use(authRoutes);
 apiRouter.use(productRoutes);
 apiRouter.use(categoryRoutes);
 apiRouter.use(regionRoutes);
+apiRouter.use(bakeryRoutes);
+apiRouter.use(favoriteRoutes);
+apiRouter.use(orderCustomerRoutes);
+apiRouter.use(orderSellerRoutes);
 
 app.use('/api', apiRouter);
-app.use("/api", orderCustomerRoutes);
 
 const PORT = 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 })

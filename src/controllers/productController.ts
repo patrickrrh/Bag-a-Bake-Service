@@ -173,5 +173,40 @@ export class ProductController {
             next(error);
         }
     }
-    
+
+    public async findRecommendedProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { regionId } = req.body;
+
+            if (!regionId) {
+                console.log("[src][controllers][ProductController][findRecommendedProducts] Region ID is required");
+                res.status(400).send("Region ID is required");
+                return;
+            }
+
+            const recommendedProducts = await productServices.findRecommendedProducts(regionId);
+
+            res.status(200).json({
+                status: 200,
+                data: recommendedProducts
+            });
+        } catch (error) {
+            console.log("[src][controllers][ProductController][findRecommendedProducts] ", error)
+            next(error);
+        }
+    }
+
+    public async findExpiringProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const expiringProducts = await productServices.findExpiringProducts();
+
+            res.status(200).json({
+                status: 200,
+                data: expiringProducts
+            });
+        } catch (error) {
+            console.log("[src][controllers][ProductController][findExpiringProducts] ", error)
+            next(error);
+        }
+    }
 }
