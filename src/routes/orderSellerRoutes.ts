@@ -10,6 +10,7 @@ router.get("/get/latest/ongoing/order", orderSellerController.findLatestOngoingO
 router.get("/count/all/pending/order", orderSellerController.countAllPendingOrder);
 router.get("/count/all/ongoing/order", orderSellerController.countAllOngoingOrder);
 router.post("/get/all/order/status", orderSellerController.findAllOrderByStatus);
+router.put("/action/order", orderSellerController.actionOrder);
 
 export default router;
 
