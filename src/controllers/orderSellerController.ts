@@ -58,8 +58,12 @@ export class OrderSellerController {
 
     public async findAllOrderByStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderStatus } = req.body
+            let { orderStatus } = req.body
 
+            if (!Array.isArray(orderStatus)) {
+                orderStatus = orderStatus === 3 ? [3, 4] : [orderStatus];
+            }
+            
             const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus);
             res.status(200).json({
                 status: 200,
@@ -70,4 +74,27 @@ export class OrderSellerController {
             next(error)
         }
     }
+
+    public async actionOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { orderId, orderStatus } = req.body
+
+            if (!orderId || !orderStatus) {
+                res.status(400).json({
+                    status: 400,
+                    message: "Missing orderId or orderStatus"
+                })
+            }
+
+            await orderSellerServices.actionOrder(orderId, orderStatus);
+            res.status(200).json({
+                status: 200,
+                message: "Success"
+            })
+
+        } catch (error) {
+            console.log("[src][controllers][OrderSellerController][actionOrder] ", error)
+            next(error)
+        }
+    }  
 }
