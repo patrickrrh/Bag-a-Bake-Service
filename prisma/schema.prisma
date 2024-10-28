@@ -71,6 +71,7 @@ model Product {
   productPrice Decimal @db.Decimal(10, 2)
   productImage String
   productDescription String
+  productCreatedDate DateTime @default(now())
   productExpirationDate DateTime
   productStock Int
   isActive Int @default(1)
@@ -82,6 +83,7 @@ model ListDiscount {
   discountId Int @id @default(autoincrement())
   productId Int
   product Product @relation(fields: [productId], references: [productId])
+  discountDate DateTime
   discountAmount Decimal @db.Decimal(10, 2)
 }
 

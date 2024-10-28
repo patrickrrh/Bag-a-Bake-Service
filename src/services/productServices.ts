@@ -28,6 +28,7 @@ export class ProductServices {
                     productStock: product.productStock,
                     discount: {
                         create: product.discount.map(disc => ({
+                            discountDate: disc.discountDate,
                             discountAmount: disc.discountAmount
                         }))
                     },
@@ -81,6 +82,7 @@ export class ProductServices {
                     discount: {
                         deleteMany: {},  
                         create: product.discount.map(disc => ({
+                            discountDate: disc.discountDate,
                             discountAmount: disc.discountAmount
                         }))
                     },

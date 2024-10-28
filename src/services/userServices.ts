@@ -34,7 +34,7 @@ export class UserServices {
 
     public async createUser(user: CreateUserInput): Promise<User> {
         user.password = bycrpt.hashSync(user.password, 12);
-
+        console.log(user);
         try {
             return await databaseService.getClient().user.create({
                 data: user

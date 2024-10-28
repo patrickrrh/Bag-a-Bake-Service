@@ -29,8 +29,8 @@ CREATE TABLE "Bakery" (
     "bakeryImage" TEXT NOT NULL,
     "bakeryDescription" TEXT NOT NULL,
     "bakeryPhoneNumber" TEXT NOT NULL,
-    "openingTime" TIMESTAMP(3) NOT NULL,
-    "closingTime" TIMESTAMP(3) NOT NULL,
+    "openingTime" TEXT NOT NULL,
+    "closingTime" TEXT NOT NULL,
     "regionId" INTEGER NOT NULL,
 
     CONSTRAINT "Bakery_pkey" PRIMARY KEY ("bakeryId")
@@ -74,9 +74,9 @@ CREATE TABLE "ListDiscount" (
 CREATE TABLE "Order" (
     "orderId" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
-    "orderDate" TIMESTAMP(3) NOT NULL,
-    "orderStatus" INTEGER NOT NULL,
-    "orderTotalPrice" INTEGER NOT NULL,
+    "bakeryId" INTEGER NOT NULL,
+    "orderDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "orderStatus" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("orderId")
 );
@@ -87,7 +87,6 @@ CREATE TABLE "OrderDetail" (
     "orderId" INTEGER NOT NULL,
     "productId" INTEGER NOT NULL,
     "productQuantity" INTEGER NOT NULL,
-    "productTotalPrice" INTEGER NOT NULL,
 
     CONSTRAINT "OrderDetail_pkey" PRIMARY KEY ("orderDetailId")
 );
@@ -154,6 +153,9 @@ ALTER TABLE "ListDiscount" ADD CONSTRAINT "ListDiscount_productId_fkey" FOREIGN 
 ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_bakeryId_fkey" FOREIGN KEY ("bakeryId") REFERENCES "Bakery"("bakeryId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "OrderDetail" ADD CONSTRAINT "OrderDetail_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("orderId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -167,4 +169,3 @@ ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_bakeryId_fkey" FOREIGN KEY ("bak
 
 -- AddForeignKey
 ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
-
