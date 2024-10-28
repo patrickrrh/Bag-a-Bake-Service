@@ -116,4 +116,22 @@ export class BakeryServices {
             throw new Error("Failed to find bakery")
         }
     }
+
+    public async findBakeryByUser(userId: number): Promise<Bakery | null> {
+        try {
+            const bakery = await databaseService.getClient().bakery.findUnique({
+                where: {
+                    userId: userId
+                },
+                include: {
+                    regionBakery: true
+                }
+            })
+
+            return bakery
+        } catch (error) {
+            console.log("[src][services][BakeryServices][findBakeryByUser] ", error)
+            throw new Error("Failed to find bakery")
+        }
+    }
 }
