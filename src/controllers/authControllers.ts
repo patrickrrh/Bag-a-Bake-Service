@@ -7,6 +7,7 @@ import { CreateBakeryInput, BakeryServices } from "../services/bakeryServices";
 import bycrpt from 'bcrypt';
 import jwt from "jsonwebtoken";
 import { User } from "@prisma/client";
+import databaseService from "../script";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
@@ -112,11 +113,18 @@ export class AuthController {
         try {
             const { userId } = req.body
 
+            const user = await userServices.findUserById(userId);
+            if (!user) {
+                console.log("[src][controllers][AuthController][signIn] User not found");
+                res.status(404).json({ error: 'User not found' });
+                return;
+            }
+
             const jti = uuidv4();
             const { accessToken, refreshToken } = generateTokens(userId, jti);
             await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, userId: userId });
 
-            res.status(200).json({ accessToken, refreshToken });
+            res.status(200).json({ accessToken, refreshToken, user });
         } catch (error) {
             console.log("[src][controllers][AuthController][signIn] ", error);
             next(error);

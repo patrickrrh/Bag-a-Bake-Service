@@ -178,4 +178,50 @@ export class ProductServices {
             throw new Error("Failed to find products by category");
         }
     }
+
+    public async findRecommendedProducts(regionId: number): Promise<Product[]> {
+        try {
+            return await databaseService.getClient().product.findMany({
+                where: {
+                    bakery: {
+                        regionId: regionId
+                    } 
+                },
+                orderBy: {
+                    productStock: 'asc'
+                },
+                include: {
+                    bakery: true
+                }
+            });
+        } catch (error) {
+            console.log("[src][services][ProductServices][findRecommendedProducts] ", error)
+            throw new Error("Failed to find recommended products");
+        }
+    }
+
+    public async findExpiringProducts(): Promise<Product[]> {
+        try {
+            return await databaseService.getClient().product.findMany({
+                where: {
+                    isActive: 1,
+                },
+                orderBy: [
+                    {
+                        productExpirationDate: 'asc',
+                    },
+                    {
+                        productStock: 'asc',
+                    },
+                ],
+                include: {
+                    bakery: true
+                },
+                take: 10
+            })
+        } catch (error) {
+            console.log("[src][services][ProductServices][findExpiringProducts] ", error)
+            throw new Error("Failed to find expiring products");
+        }
+    }
 }
