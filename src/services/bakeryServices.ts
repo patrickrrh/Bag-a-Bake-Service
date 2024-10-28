@@ -28,7 +28,8 @@ export class BakeryServices {
         try {
             return await databaseService.getClient().bakery.findMany({
                 include: {
-                    regionBakery: true
+                    regionBakery: true,
+                    favorite: true
                 }
             })
         } catch (error) {
