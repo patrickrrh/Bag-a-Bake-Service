@@ -15,7 +15,10 @@ export class FavoriteController {
             }
             
             const favorite = await favoriteServices.addFavorite({ userId, bakeryId });
-            res.status(201).json(favorite);
+            res.status(201).json({
+                status: 201,
+                data: favorite
+            });
         } catch (error) {
             console.log("[src][controllers][FavoriteController][addFavorite] ", error);
             next(error);
@@ -24,16 +27,18 @@ export class FavoriteController {
 
     public async removeFavorite(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { favoriteId } = req.body;
+            const { favoriteId } = req.params;
 
             if (!favoriteId) {
-                console.log("[src][controllers][FavoriteController][removeFavorite] favoriteId is required");
-                res.status(400).send("favoriteId is required");
+                console.log("[src][controllers][FavoriteController][addFavorite] userId or bakeryId is required");
+                res.status(400).send("userId or bakeryId is required");
                 return;
             }
 
-            const favorite = await favoriteServices.removeFavorite(favoriteId);
-            res.status(200).json(favorite);
+            const favorite = await favoriteServices.removeFavorite(Number(favoriteId));
+            res.status(200).json({
+                status: 200
+            });
         } catch (error) {
             console.log("[src][controllers][FavoriteController][removeFavorite] ", error);
             next(error);
