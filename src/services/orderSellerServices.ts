@@ -71,11 +71,13 @@ export class OrderSellerServices {
         }
     }
 
-    public async findAllOrderByStatus(orderStatus: number): Promise<Order[]> {
+    public async findAllOrderByStatus(orderStatus: number[]): Promise<Order[]> {
         try {
             return await databaseService.getClient().order.findMany({
                 where: {
-                    orderStatus: orderStatus
+                    orderStatus: {
+                        in: orderStatus
+                    }
                 },
                 include: {
                     user: true,
@@ -89,6 +91,22 @@ export class OrderSellerServices {
         } catch (error) {
             console.log("[src][services][OrderSellerServices][findAllPendingOrder] ", error)
             throw new Error("Failed to get all pending order")
+        }
+    }
+
+    public async actionOrder(orderId: number, orderStatus: number): Promise<void> {
+        try {
+            await databaseService.getClient().order.update({
+                where: {
+                    orderId
+                },
+                data: {
+                    orderStatus
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][OrderSellerServices][actionOrder] ", error)
+            throw new Error("Failed to action order")
         }
     }
 }

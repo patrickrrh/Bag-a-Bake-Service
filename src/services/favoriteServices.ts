@@ -18,14 +18,11 @@ export class FavoriteServices {
         }
     }
 
-    public async removeFavorite(favorite: CreateFavoriteInput): Promise<Favorite> {
+    public async removeFavorite(favoriteId: number): Promise<Favorite> {
         try {
             return await databaseService.getClient().favorite.delete({
                 where: {
-                    userId_bakeryId: {
-                        userId: favorite.userId,
-                        bakeryId: favorite.bakeryId
-                    }
+                    favoriteId: favoriteId
                 }
             })
         } catch (error) {
