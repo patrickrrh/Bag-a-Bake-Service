@@ -57,7 +57,12 @@ export class UserServices {
                     userId
                  },
                  include: {
-                    regionUser: true
+                    regionUser: true,
+                    bakery: {
+                        include: {
+                            regionBakery: true
+                        }
+                    }
                  }
             })
         } catch (error) {
