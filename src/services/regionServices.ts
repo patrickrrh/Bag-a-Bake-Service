@@ -4,7 +4,11 @@ import databaseService from "../script";
 export class RegionServices {
     public async findRegion(): Promise<Region[]> {
         try {
-            return databaseService.getClient().region.findMany()
+            return databaseService.getClient().region.findMany({
+                orderBy: {
+                    regionId: 'asc'
+                }
+            })
         } catch (error) {
             console.log("[src][services][RegionServices][findRegion] ", error)
             throw new Error("Failed to find region")
