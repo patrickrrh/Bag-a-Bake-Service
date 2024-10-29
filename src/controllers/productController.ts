@@ -8,7 +8,7 @@ export class ProductController {
     public async createProduct(req: Request, res: Response, next: NextFunction): Promise<void> { 
         try {
             const productData: CreateProductInput = req.body;
-
+            console.log(productData);
             if (!productData.productName ||
                 !productData.productPrice ||
                 !productData.productImage ||
@@ -16,7 +16,6 @@ export class ProductController {
                 !productData.productExpirationDate ||
                 !productData.productStock ||
                 !productData.discount || 
-                productData.discount.length === 0 ||
                 !productData.bakeryId ||
                 !productData.categoryId
             ) {
