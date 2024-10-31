@@ -1,7 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import { BakeryServices } from "../services/bakeryServices";
+import { ProductServices } from "../services/productServices";
+import { Bakery } from "@prisma/client";
 
 const bakeryServices = new BakeryServices(); 
+const productServices = new ProductServices();
 
 export class BakeryController {
     public async findAllBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -58,6 +61,37 @@ export class BakeryController {
             });
         } catch (error) {
             console.log("[src][controllers][BakeryController][findBakeryByRegion] ", error);
+            next(error);
+        }
+    }
+
+    public async findBakeryByExpiringProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const expiringProducts = await productServices.findExpiringProducts();
+
+            if (!expiringProducts) {
+                console.log("[src][controllers][BakeryController][findBakeryByExpiringProducts] No expiring products");
+                res.status(404).json({
+                    status: 404,
+                    message: "No expiring products"
+                });
+                return;
+            }
+
+            const bakeries: Bakery[] = [];
+            for (const product of expiringProducts) {
+                const bakery = await bakeryServices.findBakeryById(product.bakeryId);
+                if (bakery) {
+                    bakeries.push(bakery);
+                }
+            }
+
+            res.status(200).json({
+                status: 200,
+                data: bakeries
+            });
+        } catch (error) {
+            console.log("[src][controllers][BakeryController][findBakeryByExpiringProducts] ", error);
             next(error);
         }
     }

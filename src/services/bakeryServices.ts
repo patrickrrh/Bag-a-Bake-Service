@@ -65,7 +65,8 @@ export class BakeryServices {
                     }
                 },
                 include: {
-                    regionBakery: true
+                    regionBakery: true,
+                    favorite: true
                 }
             });
 
@@ -106,13 +107,31 @@ export class BakeryServices {
                     regionId: regionId
                 },
                 include: {
-                    regionBakery: true
+                    regionBakery: true,
+                    favorite: true
                 }
             })
 
             return bakery
         } catch (error) {
             console.log("[src][services][BakeryServices][findBakeryByRegion] ", error)
+            throw new Error("Failed to find bakery")
+        }
+    }
+
+    public async findBakeryById(bakeryId: number): Promise<Bakery | null> {
+        try {
+            return await databaseService.getClient().bakery.findUnique({
+                where: {
+                    bakeryId: bakeryId
+                },
+                include: {
+                    regionBakery: true,
+                    favorite: true
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][BakeryServices][findBakeryById] ", error)
             throw new Error("Failed to find bakery")
         }
     }
