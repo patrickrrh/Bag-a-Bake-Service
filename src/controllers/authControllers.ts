@@ -77,11 +77,11 @@ export class AuthController {
                 return;
             }
 
-            const user = await userServices.createUser(userData);
+            const newUser = await userServices.createUser(userData);
 
-            if (user.roleId === 2) {
+            if (newUser.roleId === 2) {
                 const bakeryData: CreateBakeryInput = {
-                    userId: user.userId,
+                    userId: newUser.userId,
                     bakeryName: req.body.bakeryName,
                     bakeryImage: req.body.bakeryImage,
                     bakeryDescription: req.body.bakeryDescription,
@@ -93,16 +93,18 @@ export class AuthController {
 
                 await bakeryServices.createBakery({
                     ...bakeryData,
-                    userId: user.userId,
+                    userId: newUser.userId,
                     regionId: req.body.bakeryRegionId,
                 })
             }
 
-            const jti = uuidv4();
-            const { accessToken, refreshToken } = generateTokens(user.userId, jti);
-            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, userId: user.userId });
+            const user = await userServices.findUserById(newUser.userId);
 
-            res.status(201).json({ accessToken, refreshToken });
+            const jti = uuidv4();
+            const { accessToken, refreshToken } = generateTokens(newUser.userId, jti);
+            await authServices.addRefreshTokenToWhitelist({ jti, refreshToken, userId: newUser.userId });
+
+            res.status(201).json({ accessToken, refreshToken, user });
         } catch (error) {
             console.log("[src][controllers][AuthController][signUp] ", error);
             next(error);

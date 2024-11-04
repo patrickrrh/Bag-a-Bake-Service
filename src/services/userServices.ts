@@ -34,7 +34,7 @@ export class UserServices {
 
     public async createUser(user: CreateUserInput): Promise<User> {
         user.password = bycrpt.hashSync(user.password, 12);
-
+        console.log(user);
         try {
             return await databaseService.getClient().user.create({
                 data: user
@@ -57,7 +57,12 @@ export class UserServices {
                     userId
                  },
                  include: {
-                    regionUser: true
+                    regionUser: true,
+                    bakery: {
+                        include: {
+                            regionBakery: true
+                        }
+                    }
                  }
             })
         } catch (error) {
