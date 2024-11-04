@@ -10,5 +10,6 @@ router.post("/sign_in", authController.signIn);
 router.post("/refresh_token", authController.refreshAuthentication);
 router.post("/is_email_registered", authController.isEmailRegistered);
 router.post("/check_account", authController.checkAccount);
+router.post("/reset_password", authController.resetPassword);
 
 export default router
