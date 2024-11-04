@@ -38,6 +38,23 @@ export class BakeryServices {
         }
     }
 
+    public async findBakeryById(bakeryId: number): Promise<Bakery | null> {
+        try {
+            return await databaseService.getClient().bakery.findUnique({
+                where: {
+                    bakeryId
+                },
+                include: {
+                    regionBakery: true,
+                    product: true
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][BakeryServices][findBakeryById] ", error)
+            throw new Error("Failed to find bakery")
+        }
+    }
+
     public async findBakeryByCategory(categoryId: number[]): Promise<Bakery[] | null> {
         try {
             const distinctBakeryIds = await databaseService.getClient().product.findMany({
