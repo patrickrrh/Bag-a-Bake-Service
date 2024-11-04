@@ -219,7 +219,7 @@ export class ProductServices {
                 include: {
                     bakery: true
                 },
-                take: 2
+                take: 10
             })
         } catch (error) {
             console.log("[src][services][ProductServices][findExpiringProducts] ", error)

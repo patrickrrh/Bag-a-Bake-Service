@@ -10,5 +10,6 @@ router.post("/get/bakery/by-category", bakeryController.findBakeryByCategory);
 router.post("/get/bakery/by-product", bakeryController.findBakeryByProduct);
 router.post("/get/bakery/by-region", bakeryController.findBakeryByRegion);
 router.get("/get/bakery/by-expiring-products", bakeryController.findBakeryByExpiringProducts);
+router.post("/get/bakery/with-filters", bakeryController.findBakeryWithFilters);
 
 export default router;
