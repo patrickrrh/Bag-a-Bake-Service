@@ -38,7 +38,7 @@ export class BakeryServices {
         }
     }
 
-    public async findBakeryByCategory(categoryId: number[]): Promise<Bakery[] | null> {
+    public async findBakeryByCategory(categoryId: number[]): Promise<Bakery[] | []> {
         try {
             const distinctBakeryIds = await databaseService.getClient().product.findMany({
                 where: {
@@ -47,15 +47,15 @@ export class BakeryServices {
                     }
                 },
                 select: {
-                    bakeryId: true
+                    bakeryId: true,
                 },
                 distinct: ['bakeryId']
-            });
+            }); 
 
             const bakeryIds = distinctBakeryIds.map((bakery) => bakery.bakeryId);
 
             if (bakeryIds.length === 0) {
-                return null;
+                return [];
             }
             
             const bakeries = await databaseService.getClient().bakery.findMany({
@@ -65,7 +65,8 @@ export class BakeryServices {
                     }
                 },
                 include: {
-                    regionBakery: true
+                    regionBakery: true,
+                    favorite: true,
                 }
             });
 
@@ -99,20 +100,38 @@ export class BakeryServices {
         }
     }
 
-    public async findBakeryByRegion(regionId: number): Promise<Bakery[] | null> {
+    public async findBakeryByRegion(regionId: number): Promise<Bakery[] | []> {
         try {
             const bakery = await databaseService.getClient().bakery.findMany({
                 where: {
                     regionId: regionId
                 },
                 include: {
-                    regionBakery: true
+                    regionBakery: true,
+                    favorite: true
                 }
             })
 
             return bakery
         } catch (error) {
             console.log("[src][services][BakeryServices][findBakeryByRegion] ", error)
+            throw new Error("Failed to find bakery")
+        }
+    }
+
+    public async findBakeryById(bakeryId: number): Promise<Bakery | null> {
+        try {
+            return await databaseService.getClient().bakery.findUnique({
+                where: {
+                    bakeryId: bakeryId
+                },
+                include: {
+                    regionBakery: true,
+                    favorite: true
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][BakeryServices][findBakeryById] ", error)
             throw new Error("Failed to find bakery")
         }
     }

@@ -38,23 +38,23 @@ VALUES
 -- Insert into "Product"
 INSERT INTO "Product" ("productId", "bakeryId", "categoryId", "productName", "productPrice", "productImage", "productDescription", "productExpirationDate", "productStock")
 VALUES
-    (1, 1, 1, 'Chocolate Cake', 15.99, 'https://example.com/product1.jpg', 'Rich chocolate cake with creamy frosting.', '2024-12-31', 50),
-    (2, 2, 2, 'Sourdough Bread', 5.49, 'https://example.com/product2.jpg', 'Artisan sourdough bread made daily.', '2024-10-31', 100),
-    (3, 3, 3, 'Blueberry Muffin', 3.99, 'https://example.com/product3.jpg', 'Moist blueberry muffin with a crumbly top.', '2024-11-15', 200);
+    (1, 1, 1, 'Chocolate Cake', 15000, 'https://example.com/product1.jpg', 'Rich chocolate cake with creamy frosting.', '2024-12-31', 2),
+    (2, 2, 2, 'Sourdough Bread', 20000, 'https://example.com/product2.jpg', 'Artisan sourdough bread made daily.', '2024-10-31', 3),
+    (3, 3, 3, 'Blueberry Muffin', 5000, 'https://example.com/product3.jpg', 'Moist blueberry muffin with a crumbly top.', '2024-11-15', 1);
 
 -- Insert into "ListDiscount"
 INSERT INTO "ListDiscount" ("discountId", "productId", "discountAmount")
 VALUES
-    (1, 1, 2.00),
-    (2, 2, 1.50),
-    (3, 3, 0.50);
+    (1, 1, 5000),
+    (2, 2, 10000),
+    (3, 3, 2000);
 
 -- Updated Order Inserts
 INSERT INTO "Order" ("orderId", "userId", "bakeryId", "orderDate", "orderStatus")
 VALUES
     (1, 1, 1, '2024-10-01', 1),
-    (2, 2, 2, '2024-10-02', 2),
-    (3, 3, 3, '2024-10-03', 3);
+    (2, 1, 2, '2024-10-02', 2),
+    (3, 1, 3, '2024-10-03', 3);
 
 -- OrderDetail Inserts
 INSERT INTO "OrderDetail" ("orderDetailId", "orderId", "productId", "productQuantity")
@@ -62,15 +62,14 @@ VALUES
     (1, 1, 1, 1),
     (2, 1, 2, 1),
     (3, 2, 2, 2),
-    (4, 3, 3, 5);
+    (4, 3, 3, 2);
 
 -- Insert into "Favorite"
 INSERT INTO "Favorite" ("favoriteId", "userId", "bakeryId")
 VALUES
     (1, 1, 1),
-    (2, 2, 2),
-    (3, 3, 3),
-    (4, 1, 2);
+    (2, 1, 2),
+    (3, 1, 3);
 
 -- Insert into "RefreshToken"
 INSERT INTO "RefreshToken" ("jti", "hashedToken", "userId")
