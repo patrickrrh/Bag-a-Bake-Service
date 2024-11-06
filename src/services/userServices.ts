@@ -70,4 +70,21 @@ export class UserServices {
             throw new Error("Failed to find user")
         }
     }
+
+    public async updateUserPassword(email: string, password: string): Promise<User> {
+        try {
+            password = bycrpt.hashSync(password, 12);
+            return await databaseService.getClient().user.update({
+                where: {
+                    email
+                },
+                data: {
+                    password
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][UserServices][updateUserPassword]", error)
+            throw new Error("Failed to update user password")
+        }
+    }
 }
