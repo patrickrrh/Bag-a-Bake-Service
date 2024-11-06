@@ -54,6 +54,7 @@ CREATE TABLE "Product" (
     "productPrice" DECIMAL(10,2) NOT NULL,
     "productImage" TEXT NOT NULL,
     "productDescription" TEXT NOT NULL,
+    "productCreatedDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "productExpirationDate" TIMESTAMP(3) NOT NULL,
     "productStock" INTEGER NOT NULL,
     "isActive" INTEGER NOT NULL DEFAULT 1,
@@ -65,6 +66,7 @@ CREATE TABLE "Product" (
 CREATE TABLE "ListDiscount" (
     "discountId" SERIAL NOT NULL,
     "productId" INTEGER NOT NULL,
+    "discountDate" TIMESTAMP(3) NOT NULL,
     "discountAmount" DECIMAL(10,2) NOT NULL,
 
     CONSTRAINT "ListDiscount_pkey" PRIMARY KEY ("discountId")
