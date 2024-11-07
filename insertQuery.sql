@@ -43,9 +43,9 @@ VALUES
 -- Insert into "ListDiscount"
 INSERT INTO "ListDiscount" ("discountId", "productId", "discountAmount")
 VALUES
-    (1, 1, 2.00),
-    (2, 2, 1.50),
-    (3, 3, 0.50);
+    (1, 1, 5000),
+    (2, 2, 10000),
+    (3, 3, 2000);
 
 -- Updated Order Inserts with bakeryId set to 1
 INSERT INTO "Order" ("orderId", "userId", "bakeryId", "orderDate", "orderStatus")
@@ -60,7 +60,7 @@ VALUES
     (1, 1, 1, 1),
     (2, 1, 2, 1),
     (3, 2, 2, 2),
-    (4, 3, 3, 5);
+    (4, 3, 3, 2);
 
 -- Insert into "Favorite" with bakeryId set to 1 for all entries
 INSERT INTO "Favorite" ("favoriteId", "userId", "bakeryId")

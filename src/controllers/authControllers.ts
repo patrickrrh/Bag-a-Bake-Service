@@ -8,6 +8,7 @@ import bycrpt from 'bcrypt';
 import jwt from "jsonwebtoken";
 import { User } from "@prisma/client";
 import databaseService from "../script";
+import { sendMail } from "../config/mailer";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
@@ -15,7 +16,7 @@ const bakeryServices = new BakeryServices();
 
 export class AuthController {
 
-    public async isEmailRegistered (req: Request, res: Response, next: NextFunction): Promise<boolean> {
+    public async isEmailRegistered(req: Request, res: Response, next: NextFunction): Promise<boolean> {
         try {
             const { email } = req.body
             const user = await userServices.findUserByEmail(email);
@@ -33,8 +34,8 @@ export class AuthController {
             return true;
         }
     }
-    
-    public async checkAccount (req: Request, res: Response, next: NextFunction): Promise<User | boolean> {
+
+    public async checkAccount(req: Request, res: Response, next: NextFunction): Promise<User | boolean> {
         try {
             const { email, password } = req.body
             const user = await userServices.findUserByEmail(email);
@@ -165,6 +166,39 @@ export class AuthController {
             res.status(200).json({ accessToken, refreshToken: newRefreshToken });
         } catch (error) {
             console.log("[src][controllers][AuthController][refreshAuthentication] ", error);
+            next(error);
+        }
+    }
+
+    public async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                console.log("[src][controllers][AuthController][resetPassword] Missing email");
+                res.status(400).json({ error: 'Missing email' });
+                return;
+            }
+
+            const findUser = await userServices.findUserByEmail(email);
+
+            if (!findUser) {
+                console.log("[src][controllers][AuthController][resetPassword] User not found");
+                res.status(404).json({ error: 'User not found' });
+                return;
+            }
+
+            const info = sendMail(email, "Permintaan Ubah Kata Sandi", 'test');
+
+            if (info) {
+                console.log("[src][controllers][AuthController][resetPassword] Email sent successfully");
+                res.status(200).json({ message: 'OTP sent successfully, please check your email' });
+            } else {
+                console.log("[src][controllers][AuthController][resetPassword] Failed to send email");
+                res.status(500).json({ error: 'Failed to send email' });
+            }
+        } catch (error) {
+            console.log("[src][controllers][AuthController][resetPassword] ", error);
             next(error);
         }
     }
