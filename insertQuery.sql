@@ -35,41 +35,51 @@ VALUES
     (2, 2, 'Bread Heaven', 'https://example.com/bakery2.jpg', 'Freshly baked bread daily.', '444-555-6666', '06:00', '18:00', 2),
     (3, 3, 'Cookie Corner', 'https://example.com/bakery3.jpg', 'The best cookies in town.', '777-888-9999', '09:00', '22:00', 3);
 
--- Insert into "Product"
-INSERT INTO "Product" ("productId", "bakeryId", "categoryId", "productName", "productPrice", "productImage", "productDescription", "productExpirationDate", "productStock")
+-- Insert Products for Two Bakeries
+INSERT INTO "Product" ("bakeryId", "categoryId", "productName", "productPrice", "productImage", "productDescription", "productExpirationDate", "productStock")
 VALUES
-    (1, 1, 1, 'Chocolate Cake', 15000, 'https://example.com/product1.jpg', 'Rich chocolate cake with creamy frosting.', '2024-12-31', 2),
-    (2, 2, 2, 'Sourdough Bread', 20000, 'https://example.com/product2.jpg', 'Artisan sourdough bread made daily.', '2024-10-31', 3),
-    (3, 3, 3, 'Blueberry Muffin', 5000, 'https://example.com/product3.jpg', 'Moist blueberry muffin with a crumbly top.', '2024-11-15', 1);
+    (1, 1, 'Vanilla Cupcake', 8000, 'https://example.com/product4.jpg', 'Delicious vanilla cupcake with sprinkles.', '2024-12-31', 5),
+    (1, 2, 'Rye Bread', 18000, 'https://example.com/product5.jpg', 'Fresh rye bread with a hearty flavor.', '2024-11-30', 3),
+    (2, 1, 'Banana Bread', 12000, 'https://example.com/product6.jpg', 'Moist banana bread with walnuts.', '2024-10-20', 4),
+    (2, 3, 'Apple Pie', 25000, 'https://example.com/product7.jpg', 'Classic apple pie with a flaky crust.', '2024-11-05', 2),
+    (2, 3, 'Cheese Croissant', 15000, 'https://example.com/product8.jpg', 'Buttery croissant filled with cheese.', '2024-11-12', 6);
 
--- Insert into "ListDiscount"
-INSERT INTO "ListDiscount" ("discountId", "productId", "discountAmount")
+-- Insert Discounts for New Products
+INSERT INTO "ListDiscount" ("productId", "discountDate", "discountAmount")
 VALUES
-    (1, 1, 5000),
-    (2, 2, 10000),
-    (3, 3, 2000);
+    (1, '2024-10-01', 1000),
+    (2, '2024-10-01', 2000),
+    (3, '2024-10-01', 1500),
+    (4, '2024-10-01', 3000),
+    (5, '2024-10-01', 2500);
 
--- Updated Order Inserts
-INSERT INTO "Order" ("orderId", "userId", "bakeryId", "orderDate", "orderStatus")
+-- Insert Ratings for Different Users and Bakeries
+INSERT INTO "Rating" ("userId", "bakeryId", "rating", "createdDate")
 VALUES
-    (1, 1, 1, '2024-10-01', 1),
-    (2, 1, 2, '2024-10-02', 2),
-    (3, 1, 3, '2024-10-03', 3);
+    (1, 1, 5, '2024-10-01'),
+    (1, 2, 4, '2024-10-02'),
+    (2, 1, 3, '2024-10-03'),
+    (2, 2, 5, '2024-10-04');
 
--- OrderDetail Inserts
-INSERT INTO "OrderDetail" ("orderDetailId", "orderId", "productId", "productQuantity")
+-- Insert Orders for Testing
+INSERT INTO "Order" ("userId", "bakeryId", "orderDate", "orderStatus")
 VALUES
-    (1, 1, 1, 1),
-    (2, 1, 2, 1),
-    (3, 2, 2, 2),
-    (4, 3, 3, 2);
+    (2, 1, '2024-10-05', 1),
+    (2, 2, '2024-10-06', 2);
 
--- Insert into "Favorite"
-INSERT INTO "Favorite" ("favoriteId", "userId", "bakeryId")
+-- Insert Order Details for Various Products
+INSERT INTO "OrderDetail" ("orderId", "productId", "productQuantity")
 VALUES
-    (1, 1, 1),
-    (2, 1, 2),
-    (3, 1, 3);
+    (1, 1, 2),  -- User 2, Bakery 1, Vanilla Cupcake
+    (1, 2, 1),  -- User 2, Bakery 1, Rye Bread
+    (2, 3, 3),  -- User 2, Bakery 2, Banana Bread
+    (2, 4, 1);  -- User 2, Bakery 2, Apple Pie
+
+-- Insert Favorites for Users and Bakeries
+INSERT INTO "Favorite" ("userId", "bakeryId")
+VALUES
+    (2, 1),
+    (2, 2);
 
 -- Insert into "RefreshToken"
 INSERT INTO "RefreshToken" ("jti", "hashedToken", "userId")

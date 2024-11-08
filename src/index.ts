@@ -9,6 +9,7 @@ import bakeryRoutes from './routes/bakeryRoutes';
 import favoriteRoutes from './routes/favoriteRoutes';
 import orderCustomerRoutes from './routes/orderCustomerRoutes';
 import orderSellerRoutes from './routes/orderSellerRoutes';
+import ratingRoutes from './routes/ratingRoutes';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ apiRouter.use(bakeryRoutes);
 apiRouter.use(favoriteRoutes);
 apiRouter.use(orderCustomerRoutes);
 apiRouter.use(orderSellerRoutes);
+apiRouter.use(ratingRoutes)
 
 app.use('/api', apiRouter);
 
