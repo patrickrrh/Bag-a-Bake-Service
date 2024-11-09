@@ -70,15 +70,15 @@ export class ProductController {
         return;
       }
 
-      res.status(200).json(createdProduct);
-    } catch (error) {
-      console.log(
-        "[src][controllers][ProductController][getProductById] ",
-        error
-      );
-      next(error);
+            res.status(200).json({
+                status: 200,
+                data: createdProduct
+            });
+        } catch (error) {
+            console.log("[src][controllers][ProductController][getProductById] ", error)
+            next(error);
+        }
     }
-  }
 
   public async updateProductById(
     req: Request,
@@ -338,4 +338,26 @@ export class ProductController {
       next(error);
     }
   }
+
+    public async findBakeryByProductId(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { productId } = req.body;
+
+            if (!productId) {
+                console.log("[src][controllers][ProductController][findBakeryByProductId] Product ID is required");
+                res.status(400).send("Product ID is required");
+                return;
+            }
+
+            const product = await productServices.findBakeryByProductId(productId);
+
+            res.status(200).json({
+                status: 200,
+                data: product
+            });
+        } catch (error) {
+            console.log("[src][controllers][ProductController][findBakeryByProductId] ", error)
+            next(error);
+        }
+    }
 }
