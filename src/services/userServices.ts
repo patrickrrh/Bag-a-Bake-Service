@@ -87,4 +87,16 @@ export class UserServices {
             throw new Error("Failed to update user password")
         }
     }
+
+    public async updateUserById(userId: number, updateData: Partial<User>): Promise<User | null> {
+        try {
+            return await databaseService.getClient().user.update({
+                where: { userId },
+                data: updateData
+            });
+        } catch (error) {
+            console.log("[src][services][UserServices][updateUserById] ", error);
+            throw error;
+        }
+    }
 }

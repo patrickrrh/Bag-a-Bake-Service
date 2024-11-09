@@ -312,4 +312,24 @@ export class AuthController {
             next(error);
         }
     }
+
+    public async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { userId, ...updateData } = req.body;
+    
+            const updatedUser = await userServices.updateUserById(parseInt(userId), updateData);
+    
+            if (!updatedUser) {
+                console.log("[src][controllers][AuthController][updateUser] User not found");
+                res.status(404).json({ error: 'User not found' });
+                return;
+            }
+    
+            console.log("[src][controllers][AuthController][updateUser] User updated successfully");
+            res.status(200).json({ message: 'User updated successfully', user: updatedUser });
+        } catch (error) {
+            console.log("[src][controllers][AuthController][updateUser] ", error);
+            next(error);
+        }
+    }
 }
