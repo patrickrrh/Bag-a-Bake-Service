@@ -225,10 +225,7 @@ export class ProductServices {
         },
       });
     } catch (error) {
-      console.log(
-        "[src][services][ProductServices][findRecommendedProducts] ",
-        error
-      );
+      console.log("[src][services][ProductServices][findRecommendedProducts] ", error);
       throw new Error("Failed to find recommended products");
     }
   }
@@ -260,6 +257,35 @@ export class ProductServices {
       throw new Error("Failed to find expiring products");
     }
   }
+
+    public async findBakeryByProductId(productId: number): Promise<Product | {}> {
+        try {
+            const product = await databaseService.getClient().product.findUnique({
+                where: {
+                    productId: productId,
+                },
+                select: {
+                    bakery: {
+                        select: {
+                            bakeryName: true,
+                            closingTime: true,
+                            // bakeryRating: true,
+                        }
+                    }
+                }
+            });
+            
+            if (product !== null) {
+                return product;
+            } else {
+                return {};
+            }
+            
+        } catch (error) {
+            console.log("[src][services][ProductServices][findBakeryByProductId]" , error)
+            throw new Error("Failed to find bakery by product ID");
+        }
+    }
 
   public async findProductsByBakeryId(bakeryId: number): Promise<Product[]> {
     if (!bakeryId) {
