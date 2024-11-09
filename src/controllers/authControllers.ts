@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 import { User } from "@prisma/client";
 import databaseService from "../script";
 import { sendMail } from "../config/mailer";
+import { generateMailContent, generateOTP, otpStore } from "../utilities/otpHandler";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
@@ -170,7 +171,7 @@ export class AuthController {
         }
     }
 
-    public async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public async sendOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { email } = req.body;
 
@@ -184,21 +185,130 @@ export class AuthController {
 
             if (!findUser) {
                 console.log("[src][controllers][AuthController][resetPassword] User not found");
-                res.status(404).json({ error: 'User not found' });
+                res.status(404).json({ 
+                    status: 404,
+                    error: 'Email tidak ditemukan'
+                 });
                 return;
             }
 
-            const info = sendMail(email, "Permintaan Ubah Kata Sandi", 'test');
+            const otp = generateOTP();
+            const expiresAt = Date.now() + 60 * 1000;
+            otpStore[email] = { otp, expiresAt };
+
+            const info = sendMail(email, "Permintaan Ubah Kata Sandi", generateMailContent(otp, findUser.userName));
 
             if (info) {
                 console.log("[src][controllers][AuthController][resetPassword] Email sent successfully");
-                res.status(200).json({ message: 'OTP sent successfully, please check your email' });
+                res.status(200).json({ 
+                    status: 200,
+                    message: 'Kode OTP berhasil dikirim, silakan cek email Anda'
+                 });
             } else {
                 console.log("[src][controllers][AuthController][resetPassword] Failed to send email");
-                res.status(500).json({ error: 'Failed to send email' });
+                res.status(500).json({ 
+                    status: 500,
+                    error: 'Gagal mengirim email'
+                 });
             }
         } catch (error) {
             console.log("[src][controllers][AuthController][resetPassword] ", error);
+            next(error);
+        }
+    }
+
+    public async verifyOTP(req: Request, res: Response, next: NextFunction): Promise<boolean> {
+        try {
+            const { email, inputOTP } = req.body;
+
+            console.log("email disini: ", email);
+            console.log("otp disini: ", inputOTP);
+
+            if (!email || !inputOTP) {
+                console.log("[src][controllers][AuthController][verifyOTP] Missing email or OTP");
+                res.status(400).json({ error: 'Missing email or OTP' });
+                return false;
+            }
+
+            const storedOTP = otpStore[email];
+            console.log("otp disini: ", storedOTP);
+            if (!storedOTP) {
+                console.log("[src][controllers][AuthController][verifyOTP] OTP not found");
+                res.status(404).json({ 
+                    status: 404,
+                    error: 'Kode OTP tidak ditemukan'
+                 });
+                return false;
+            }
+
+            const { otp, expiresAt } = storedOTP;
+            if (Date.now() > expiresAt) {
+                delete otpStore[email];
+                console.log("[src][controllers][AuthController][verifyOTP] OTP has expired");
+                res.status(400).json({ 
+                    status: 400,
+                    error: 'Kode OTP tidak valid, silakan kirim ulang'
+                 });
+                return false;
+            }
+
+            if (inputOTP === otp) {
+                delete otpStore[email];
+                console.log("[src][controllers][AuthController][verifyOTP] OTP is valid");
+                res.status(200).json({ 
+                    status: 200,
+                    message: 'OTP is valid'
+                 });
+                return true;
+            } else {
+                console.log("[src][controllers][AuthController][verifyOTP] Invalid OTP");
+                res.status(400).json({ 
+                    status: 400,
+                    error: 'Kode OTP tidak valid'
+                 });
+                return false;
+            }
+        } catch (error) {
+            console.log("[src][controllers][AuthController][verifyOTP] ", error);
+            next(error);
+            return false;
+        }
+    }
+
+    public async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { email, password } = req.body;
+
+            if (!email || !password) {
+                console.log("[src][controllers][AuthController][changePassword] Missing email or password");
+                res.status(400).json({ 
+                    status: 400,
+                    error: 'Missing email or password'
+                });
+                return;
+            }
+
+            const findUser = await userServices.findUserByEmail(email);
+
+            if (!findUser) {
+                console.log("[src][controllers][AuthController][changePassword] User not found");
+                res.status(404).json({ 
+                    status: 404,
+                    error: 'Email tidak ditemukan'
+                 });
+                return;
+            }
+
+            await authServices.revokeTokens(findUser.userId);
+
+            await userServices.updateUserPassword(email, password);
+            console.log("[src][controllers][AuthController][changePassword] Password changed successfully");
+            res.status(200).json({
+                status: 200,
+                message: 'Password berhasil diubah'
+            })            
+        } catch (error) {
+            console.log("[src][controllers][AuthController][changePassword] ", error);
             next(error);
         }
     }

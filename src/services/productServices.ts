@@ -47,23 +47,29 @@ export class ProductServices {
     }
   }
 
-  public async findProductById(productId: number): Promise<Product | null> {
-    if (!productId) {
+  public async findProductById(productId: number | string): Promise<Product | null> {
+    const numericProductId = Number(productId);
+  
+    if (!numericProductId) {
       console.log(
         "[src][services][ProductServices][findProductById] Product ID is required"
       );
       throw new Error("Product ID is required");
     }
-
+    // console.log("product id", numericProductId);
     try {
       return await databaseService.getClient().product.findUnique({
-        where: { productId },
+        where: { productId: numericProductId },
+        include: {
+          discount: true,
+        },
       });
     } catch (error) {
       console.log("[src][services][ProductServices][findProductById] ", error);
       throw new Error("Failed to find product");
     }
   }
+  
 
   public async updateProductById(
     productId: number,
@@ -280,4 +286,25 @@ export class ProductServices {
             throw new Error("Failed to find bakery by product ID");
         }
     }
+
+  public async findProductsByBakeryId(bakeryId: number): Promise<Product[]> {
+    if (!bakeryId) {
+      console.log(
+        "[src][services][ProductServices][findProductsByBakeryId] Bakery ID is required"
+      );
+      throw new Error("Bakery ID is required");
+    }
+
+    try {
+      return await databaseService.getClient().product.findMany({
+        where: { bakeryId },
+      });
+    } catch (error) {
+      console.log(
+        "[src][services][ProductServices][findProductsByBakeryId]",
+        error
+      );
+      throw new Error("Failed to find products by bakery ID");
+    }
+  }
 }
