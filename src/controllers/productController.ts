@@ -187,6 +187,9 @@ export class ProductController {
   ): Promise<void> {
     try {
       const { productId } = req.body;
+      const numericProductId = Number(productId);
+      console.log(req.body);
+      console.log(productId);
 
       if (!productId) {
         console.log(
@@ -196,7 +199,7 @@ export class ProductController {
         return;
       }
 
-      const deletedProduct = await productServices.deleteProductById(productId);
+      const deletedProduct = await productServices.deleteProductById(numericProductId);
 
       if (!deletedProduct) {
         console.log(
