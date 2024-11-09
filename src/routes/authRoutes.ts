@@ -13,5 +13,7 @@ router.post("/check_account", authController.checkAccount);
 router.post("/send/otp", authController.sendOTP);
 router.post("/verify/otp", authController.verifyOTP);
 router.put("/change/password", authController.changePassword);
+router.put("/update/user", authController.updateUser);
+
 
 export default router

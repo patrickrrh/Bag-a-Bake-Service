@@ -20,6 +20,21 @@ export class BakeryController {
         }
     }
 
+    public async findBakeryById(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { bakeryId } = req.body;
+
+            const bakery = await bakeryServices.findBakeryById(bakeryId);
+            res.status(200).json({
+                status: 200,
+                data: bakery
+            });
+        } catch (error) {
+            console.log("[src][controllers][BakeryController][findBakeryById] ", error);
+            next(error);
+        }
+    }
+
     public async findBakeryByCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { categoryId } = req.body;

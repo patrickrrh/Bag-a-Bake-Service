@@ -31,9 +31,7 @@ VALUES
 -- Insert into "Bakery"
 INSERT INTO "Bakery" ("bakeryId", "userId", "bakeryName", "bakeryImage", "bakeryDescription", "bakeryPhoneNumber", "openingTime", "closingTime", "regionId")
 VALUES
-    (1, 1, 'Sweet Treats', 'https://example.com/bakery1.jpg', 'Delicious cakes and pastries.', '111-222-3333', '08:00', '20:00', 1),
-    (2, 2, 'Bread Heaven', 'https://example.com/bakery2.jpg', 'Freshly baked bread daily.', '444-555-6666', '06:00', '18:00', 2),
-    (3, 3, 'Cookie Corner', 'https://example.com/bakery3.jpg', 'The best cookies in town.', '777-888-9999', '09:00', '22:00', 3);
+    (1, 1, 'Sweet Treats', 'https://example.com/bakery1.jpg', 'Delicious cakes and pastries.', '111-222-3333', '08:00', '20:00', 1);
 
 -- Insert Products for Two Bakeries
 INSERT INTO "Product" ("bakeryId", "categoryId", "productName", "productPrice", "productImage", "productDescription", "productExpirationDate", "productStock")
