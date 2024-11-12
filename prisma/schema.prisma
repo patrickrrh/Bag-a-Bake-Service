@@ -35,7 +35,6 @@ model User {
   signUpDate DateTime @default(now())
   refreshToken RefreshToken[]
   Favorite Favorite[]
-  Rating Rating[]
 }
 
 model Bakery {
@@ -53,7 +52,6 @@ model Bakery {
   product Product[]
   favorite Favorite[]
   order Order[]
-  Rating Rating[]
 }
 
 model Category {
@@ -98,6 +96,7 @@ model Order {
   orderDate DateTime @default(now())
   orderStatus Int @default(0)
   orderDetail OrderDetail[]
+  rating Rating?
 }
 
 model OrderDetail {
@@ -136,10 +135,9 @@ model Region {
 
 model Rating {
   ratingId Int @id @default(autoincrement())
-  userId Int
-  user User @relation(fields: [userId], references: [userId])
-  bakeryId Int
-  bakery Bakery @relation(fields: [bakeryId], references: [bakeryId])
+  orderId Int @unique
+  order Order? @relation(fields: [orderId], references: [orderId])
   rating Int
+  review String
   createdDate DateTime @default(now())
 }
