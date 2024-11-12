@@ -47,10 +47,10 @@ export class OrderCustomerServices {
                 include: {
                     orderDetail: {
                         include: {
-                            product: true, // Include related Product model
+                            product: true,
                         },
                     },
-                    bakery: true, // Include bakery details if needed
+                    bakery: true,
                 },
             });
 
