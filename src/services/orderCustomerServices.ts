@@ -41,10 +41,13 @@ export class OrderCustomerServices {
         }
     }
 
-    public async getOrderByStatus(orderStatus: number): Promise<OrderWithDetails[]> {
+    public async getOrderByStatus(orderStatus: number, userId: number): Promise<OrderWithDetails[]> {
         try {
             const orders = await databaseService.getClient().order.findMany({
-                where: { orderStatus },
+                where: { 
+                    orderStatus,
+                    userId
+                },
                 include: {
                     orderDetail: {
                         include: {
