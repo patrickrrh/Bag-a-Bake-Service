@@ -28,8 +28,8 @@ export class OrderCustomerController {
 
     public async getOrderByStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderStatus } = req.body
-            const orders = await orderCustomerServices.getOrderByStatus(orderStatus);
+            const { orderStatus, userId } = req.body
+            const orders = await orderCustomerServices.getOrderByStatus(orderStatus, userId);
 
             if (orders.length === 0) {
                 res.status(404).json({ 
