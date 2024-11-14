@@ -11,6 +11,7 @@ type OrderWithDetails = Prisma.OrderGetPayload<{
         };
     };
 }>;
+
 interface CreateInputOrderCustomer {
     userId: number;
     orderDetail: OrderDetail[];
