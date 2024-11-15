@@ -269,6 +269,7 @@ export class ProductServices {
             select: {
               bakeryName: true,
               closingTime: true,
+              bakeryId: true,
               // bakeryRating: true,
             }
           }

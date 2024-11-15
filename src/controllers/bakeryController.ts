@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import { BakeryServices } from "../services/bakeryServices";
 import { ProductServices } from "../services/productServices";
+import { RatingServices } from "../services/ratingServices";
 import { Bakery } from "@prisma/client";
 
 const bakeryServices = new BakeryServices();
 const productServices = new ProductServices();
+const ratingServices = new RatingServices();
 
 export class BakeryController {
     public async findAllBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -25,9 +27,16 @@ export class BakeryController {
             const { bakeryId } = req.body;
 
             const bakery = await bakeryServices.findBakeryById(bakeryId);
+
+            const ratings = await ratingServices.findRatingByBakery(bakeryId);
+
+            const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
+            const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
+            const reviewCount = ratings.filter((r) => r.review !== '').length;
+
             res.status(200).json({
                 status: 200,
-                data: bakery
+                data: { bakery, prevRating: { averageRating, reviewCount } }
             });
         } catch (error) {
             console.log("[src][controllers][BakeryController][findBakeryById] ", error);
