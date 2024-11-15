@@ -11,6 +11,7 @@ type OrderWithDetails = Prisma.OrderGetPayload<{
         };
     };
 }>;
+
 interface CreateInputOrderCustomer {
     userId: number;
     orderDetail: OrderDetail[];
@@ -43,7 +44,10 @@ export class OrderCustomerServices {
     public async getOrderByStatus(orderStatus: number, userId: number): Promise<OrderWithDetails[]> {
         try {
             const orders = await databaseService.getClient().order.findMany({
-                where: { orderStatus, userId },
+                where: { 
+                    orderStatus,
+                    userId
+                },
                 include: {
                     orderDetail: {
                         include: {

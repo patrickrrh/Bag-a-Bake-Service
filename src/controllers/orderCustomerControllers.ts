@@ -39,7 +39,7 @@ export class OrderCustomerController {
                 return;
             }
 
-            const ordersWithRatingStatus = await Promise.all(
+            const newOrderData = await Promise.all(
                 orders.map(async (order) => {
                     const isRated = await ratingServices.checkIsOrderRated(order.orderId);
                     const prevRating = await ratingServices.findRatingByBakery(order.bakeryId);
@@ -48,13 +48,20 @@ export class OrderCustomerController {
                     const averageRating = prevRating.length > 0 ? totalRatings / prevRating.length : 0;
                     const reviewCount = prevRating.filter((r) => r.review !== '').length;
 
-                    return { ...order, isRated, prevRating: { averageRating, reviewCount } };
+                    const totalOrderQuantity = order.orderDetail.reduce(
+                        (sum, detail) => sum + detail.productQuantity, 0
+                    )
+                    const totalOrderPrice = order.orderDetail.reduce(
+                        (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+                    )
+
+                    return { ...order, isRated, prevRating: { averageRating, reviewCount }, totalOrderQuantity, totalOrderPrice };
                 })
             )
 
             res.status(200).json({
                 status: 200,
-                data: ordersWithRatingStatus
+                data: newOrderData
             });
         } catch (error) {
             console.log("[src][controllers][OrderCustomerController][getOrderByStatus] ", error);

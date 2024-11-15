@@ -303,38 +303,32 @@ export class ProductController {
     }
   }
 
-  public async getProductsByBakeryId(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async getProductsByBakeryId(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { bakeryId } = req.body;
+      const { bakeryId, isActive } = req.body;
 
-      if (!bakeryId) {
+      if (!bakeryId || !isActive) {
         console.log(
-          "[src][controllers][ProductController][getProductsByBakeryId] Bakery ID is required"
+          "[src][controllers][ProductController][getProductsByBakeryId] Bakery ID or isActive is required"
         );
-        res.status(400).send("Bakery ID is required");
+        res.status(400).send("Bakery ID or isActive is required");
         return;
       }
 
-      const products = await productServices.findProductsByBakeryId(bakeryId);
+      const products = await productServices.findProductsByBakeryId(bakeryId, isActive);
 
-      if (!products || products.length === 0) {
-        console.log(
-          "[src][controllers][ProductController][getProductsByBakeryId] No products found for this bakery ID"
-        );
+      if (products.length === 0) {
+        console.log("[src][controllers][ProductController][getProductsByBakeryId] No products found for this bakery ID");
         res.status(404).send("No products found for this bakery ID");
         return;
       }
 
-      res.status(200).json(products);
+      res.status(200).json({
+        status: 200,
+        data: products
+      });
     } catch (error) {
-      console.log(
-        "[src][controllers][ProductController][getProductsByBakeryId]",
-        error
-      );
+      console.log("[src][controllers][ProductController][getProductsByBakeryId]", error);
       next(error);
     }
   }

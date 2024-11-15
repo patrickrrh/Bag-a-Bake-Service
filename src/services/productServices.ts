@@ -49,7 +49,7 @@ export class ProductServices {
 
   public async findProductById(productId: number | string): Promise<Product | null> {
     const numericProductId = Number(productId);
-  
+
     if (!numericProductId) {
       console.log(
         "[src][services][ProductServices][findProductById] Product ID is required"
@@ -69,7 +69,7 @@ export class ProductServices {
       throw new Error("Failed to find product");
     }
   }
-  
+
 
   public async updateProductById(
     productId: number,
@@ -258,46 +258,46 @@ export class ProductServices {
     }
   }
 
-    public async findBakeryByProductId(productId: number): Promise<Product | {}> {
-        try {
-            const product = await databaseService.getClient().product.findUnique({
-                where: {
-                    productId: productId,
-                },
-                select: {
-                    bakery: {
-                        select: {
-                            bakeryName: true,
-                            closingTime: true,
-                            bakeryId: true
-                        }
-                    }
-                }
-            });
-            
-            if (product !== null) {
-                return product;
-            } else {
-                return {};
+  public async findBakeryByProductId(productId: number): Promise<Product | {}> {
+    try {
+      const product = await databaseService.getClient().product.findUnique({
+        where: {
+          productId: productId,
+        },
+        select: {
+          bakery: {
+            select: {
+              bakeryName: true,
+              closingTime: true,
+              bakeryId: true,
+              // bakeryRating: true,
             }
-            
-        } catch (error) {
-            console.log("[src][services][ProductServices][findBakeryByProductId]" , error)
-            throw new Error("Failed to find bakery by product ID");
+          }
         }
-    }
+      });
 
-  public async findProductsByBakeryId(bakeryId: number): Promise<Product[]> {
- 
+      if (product !== null) {
+        return product;
+      } else {
+        return {};
+      }
+
+    } catch (error) {
+      console.log("[src][services][ProductServices][findBakeryByProductId]", error)
+      throw new Error("Failed to find bakery by product ID");
+    }
+  }
+
+  public async findProductsByBakeryId(bakeryId: number, isActive: number): Promise<Product[]> {
     try {
       return await databaseService.getClient().product.findMany({
-        where: { bakeryId },
+        where: { 
+          bakeryId,
+          isActive
+        },
       });
     } catch (error) {
-      console.log(
-        "[src][services][ProductServices][findProductsByBakeryId]",
-        error
-      );
+      console.log("[src][services][ProductServices][findProductsByBakeryId]", error);
       throw new Error("Failed to find products by bakery ID");
     }
   }

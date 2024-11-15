@@ -6,10 +6,22 @@ const orderSellerServices = new OrderSellerServices();
 export class OrderSellerController {
     public async findLatestPendingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const latestPendingOrder = await orderSellerServices.findLatestPendingOrder();
+            const { bakeryId } = req.body
+
+            const latestPendingOrder = await orderSellerServices.findLatestPendingOrder(bakeryId);
+
+            const updatedOrderDetails = latestPendingOrder?.orderDetail.map((detail) => ({
+                ...detail,
+                totalDetailPrice: detail.productQuantity * detail.product.productPrice.toNumber(),
+            }));
+
+            const totalOrderPrice = latestPendingOrder?.orderDetail.reduce(
+                (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+            )
+
             res.status(200).json({
                 status: 200,
-                data: latestPendingOrder
+                data: { ...latestPendingOrder, orderDetail: updatedOrderDetails, totalOrderPrice }
             })
         } catch (error) {
             console.log("[src][controllers][OrderSellerController][findLatestPendingOrder] ", error)
@@ -19,10 +31,22 @@ export class OrderSellerController {
 
     public async findLatestOngoingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const latestOngoingOrder = await orderSellerServices.findLatestOngoingOrder();
+            const { bakeryId } = req.body
+
+            const latestOngoingOrder = await orderSellerServices.findLatestOngoingOrder(bakeryId);
+
+            const updatedOrderDetails = latestOngoingOrder?.orderDetail.map((detail) => ({
+                ...detail,
+                totalDetailPrice: detail.productQuantity * detail.product.productPrice.toNumber(),
+            }));
+
+            const totalOrderPrice = latestOngoingOrder?.orderDetail.reduce(
+                (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+            )
+
             res.status(200).json({
                 status: 200,
-                data: latestOngoingOrder
+                data: { ...latestOngoingOrder, orderDetail: updatedOrderDetails, totalOrderPrice }
             })
         } catch (error) {
             console.log("[src][controllers][OrderSellerController][findLatestOngoingOrder] ", error)
@@ -32,7 +56,9 @@ export class OrderSellerController {
 
     public async countAllPendingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const countAllPendingOrder = await orderSellerServices.countAllPendingOrder();
+            const { bakeryId } = req.body
+
+            const countAllPendingOrder = await orderSellerServices.countAllPendingOrder(bakeryId);
             res.status(200).json({
                 status: 200,
                 data: countAllPendingOrder
@@ -45,7 +71,9 @@ export class OrderSellerController {
 
     public async countAllOngoingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const countAllOngoingOrder = await orderSellerServices.countAllOngoingOrder();
+            const { bakeryId } = req.body
+
+            const countAllOngoingOrder = await orderSellerServices.countAllOngoingOrder(bakeryId);
             res.status(200).json({
                 status: 200,
                 data: countAllOngoingOrder
@@ -58,16 +86,32 @@ export class OrderSellerController {
 
     public async findAllOrderByStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            let { orderStatus } = req.body
+            let { orderStatus, bakeryId } = req.body
 
             if (!Array.isArray(orderStatus)) {
                 orderStatus = orderStatus === 3 ? [3, 4] : [orderStatus];
             }
             
-            const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus);
+            const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus, bakeryId);
+
+            const newOrderData = await Promise.all(
+                allOrder.map(async (order) => {
+                    const updatedOrderDetails = order.orderDetail.map((detail) => ({
+                        ...detail,
+                        totalDetailPrice: detail.productQuantity * detail.product.productPrice.toNumber(),
+                    }));
+
+                    const totalOrderPrice = order.orderDetail.reduce(
+                        (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+                    )
+
+                    return { ...order, orderDetail: updatedOrderDetails, totalOrderPrice };
+                })
+            )
+
             res.status(200).json({
                 status: 200,
-                data: allOrder
+                data: newOrderData
             })
         } catch (error) {
             console.log("[src][controllers][OrderSellerController][findAllOrderByStatus] ", error)
