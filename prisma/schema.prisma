@@ -96,6 +96,7 @@ model Order {
   orderDate DateTime @default(now())
   orderStatus Int @default(0)
   orderDetail OrderDetail[]
+  rating Rating?
 }
 
 model OrderDetail {
@@ -130,4 +131,13 @@ model Region {
   regionName String
   user User[]
   bakery Bakery[]
+}
+
+model Rating {
+  ratingId Int @id @default(autoincrement())
+  orderId Int @unique
+  order Order? @relation(fields: [orderId], references: [orderId])
+  rating Int
+  review String
+  createdDate DateTime @default(now())
 }

@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { OrderCustomerServices } from "../services/orderCustomerServices";
+import { RatingServices } from "../services/ratingServices";
 
 const orderCustomerServices = new OrderCustomerServices();
+const ratingServices = new RatingServices();
 
 export class OrderCustomerController {
 
@@ -26,32 +28,33 @@ export class OrderCustomerController {
 
     public async getOrderByStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderStatus } = req.body
-            const orders = await orderCustomerServices.getOrderByStatus(orderStatus);
+            const { orderStatus, userId } = req.body
+            const orders = await orderCustomerServices.getOrderByStatus(orderStatus, userId);
 
-            console.log(orders)
+            if (orders.length === 0) {
+                res.status(404).json({ 
+                    status: 404, 
+                    message: "No orders found"
+                });
+                return;
+            }
 
-            const result = orders.map(order => {
-                const totalQuantity = order.orderDetail.reduce(
-                    (sum, detail) => sum + detail.productQuantity,
-                    0
-                );
-    
-                const totalOrderPrice = order.orderDetail.reduce(
-                    (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 
-                    0
-                );
-    
-                return { 
-                    ...order, 
-                    totalQuantity, 
-                    totalOrderPrice 
-                };
-            });
+            const ordersWithRatingStatus = await Promise.all(
+                orders.map(async (order) => {
+                    const isRated = await ratingServices.checkIsOrderRated(order.orderId);
+                    const prevRating = await ratingServices.findRatingByBakery(order.bakeryId);
+
+                    const totalRatings = prevRating.reduce((sum, r) => sum + r.rating, 0);
+                    const averageRating = prevRating.length > 0 ? totalRatings / prevRating.length : 0;
+                    const reviewCount = prevRating.filter((r) => r.review !== '').length;
+
+                    return { ...order, isRated, prevRating: { averageRating, reviewCount } };
+                })
+            )
 
             res.status(200).json({
                 status: 200,
-                data: result
+                data: ordersWithRatingStatus
             });
         } catch (error) {
             console.log("[src][controllers][OrderCustomerController][getOrderByStatus] ", error);
