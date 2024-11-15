@@ -168,4 +168,25 @@ export class BakeryController {
             next(error);
         }
     }
+
+    public async updateBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { bakeryId, ...updateData } = req.body;
+    
+            const updatedBakery = await bakeryServices.updateBakeryById(parseInt(bakeryId), updateData);
+    
+            if (!updatedBakery) {
+                console.log("[src][controllers][BakeryController][updateBakery] Bakery not found");
+                res.status(404).json({ error: 'Bakery not found' });
+                return;
+            }
+    
+            console.log("[src][controllers][BakeryController][updateBakery] Bakery updated successfully");
+            res.status(200).json({ message: 'Bakery updated successfully', bakery: updatedBakery });
+        } catch (error) {
+            console.log("[src][controllers][BakeryController][updateBakery] ", error);
+            next(error);
+        }
+    }
+    
 }
