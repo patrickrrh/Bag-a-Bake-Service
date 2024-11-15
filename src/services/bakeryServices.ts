@@ -135,4 +135,17 @@ export class BakeryServices {
             throw new Error("Failed to find bakery")
         }
     }
+
+    public async updateBakeryById(bakeryId: number, updateData: Partial<Bakery>): Promise<Bakery | null> {
+        try {
+            return await databaseService.getClient().bakery.update({
+                where: { bakeryId },
+                data: updateData,
+            });
+        } catch (error) {
+            console.log("[src][services][BakeryServices][updateBakeryById] ", error);
+            throw new Error("Failed to update bakery");
+        }
+    }
+    
 }

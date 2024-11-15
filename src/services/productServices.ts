@@ -288,13 +288,7 @@ export class ProductServices {
     }
 
   public async findProductsByBakeryId(bakeryId: number): Promise<Product[]> {
-    if (!bakeryId) {
-      console.log(
-        "[src][services][ProductServices][findProductsByBakeryId] Bakery ID is required"
-      );
-      throw new Error("Bakery ID is required");
-    }
-
+ 
     try {
       return await databaseService.getClient().product.findMany({
         where: { bakeryId },
