@@ -1,4 +1,4 @@
-import { Category, ListDiscount, Product, Bakery } from "@prisma/client";
+import { Category, ListDiscount, Product, Bakery, Prisma } from "@prisma/client";
 import databaseService from "../script";
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -13,6 +13,12 @@ export interface CreateProductInput {
   bakeryId: number;
   categoryId: number;
 }
+
+type ProductWithDiscount = Prisma.ProductGetPayload<{
+  include: {
+      discount: any
+  }
+}>
 
 export class ProductServices {
   public async createProduct(product: CreateProductInput): Promise<void> {
@@ -288,12 +294,15 @@ export class ProductServices {
     }
   }
 
-  public async findProductsByBakeryId(bakeryId: number, isActive: number): Promise<Product[]> {
+  public async findProductsByBakeryId(bakeryId: number, isActive: number): Promise<ProductWithDiscount[]> {
     try {
       return await databaseService.getClient().product.findMany({
         where: { 
           bakeryId,
           isActive
+        },
+        include: {
+          discount: true,
         },
       });
     } catch (error) {
