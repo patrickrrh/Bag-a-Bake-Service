@@ -125,7 +125,7 @@ export class BakeryController {
             const { categoryId, regionId, expiringProducts } = req.body;
             let bakeries: Bakery[] | undefined;
 
-            if (Array.isArray(categoryId) &&categoryId.length > 0) {
+            if (Array.isArray(categoryId) && categoryId.length > 0) {
                 const categoryBakeries = await bakeryServices.findBakeryByCategory(categoryId);
                 bakeries = bakeries
                     ? bakeries.filter(bakery => categoryBakeries?.some(categoryBakery => categoryBakery.bakeryId === bakery.bakeryId)) :
@@ -151,13 +151,16 @@ export class BakeryController {
                     return;
                 }
 
-                const expiringBakeries: Bakery[] = [];
+                const expiringBakeriesMap = new Map<number, Bakery>();
+
                 for (const product of expiringProducts) {
                     const bakery = await bakeryServices.findBakeryById(product.bakeryId);
-                    if (bakery) {
-                        expiringBakeries.push(bakery);
+                    if (bakery && !expiringBakeriesMap.has(bakery.bakeryId)) {
+                        expiringBakeriesMap.set(bakery.bakeryId, bakery);
                     }
                 }
+            
+                const expiringBakeries = Array.from(expiringBakeriesMap.values());
 
                 bakeries = bakeries
                     ? bakeries.filter(bakery => expiringBakeries.some(expBakery => expBakery.bakeryId === bakery.bakeryId))

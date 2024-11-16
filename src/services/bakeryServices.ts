@@ -46,7 +46,8 @@ export class BakeryServices {
                 },
                 include: {
                     regionBakery: true,
-                    product: true
+                    product: true,
+                    favorite: true
                 }
             })
         } catch (error) {
