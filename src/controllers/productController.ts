@@ -70,15 +70,18 @@ export class ProductController {
         return;
       }
 
-            res.status(200).json({
-                status: 200,
-                data: createdProduct
-            });
-        } catch (error) {
-            console.log("[src][controllers][ProductController][getProductById] ", error)
-            next(error);
-        }
+      res.status(200).json({
+        status: 200,
+        data: createdProduct,
+      });
+    } catch (error) {
+      console.log(
+        "[src][controllers][ProductController][getProductById] ",
+        error
+      );
+      next(error);
     }
+  }
 
   public async updateProductById(
     req: Request,
@@ -199,7 +202,9 @@ export class ProductController {
         return;
       }
 
-      const deletedProduct = await productServices.deleteProductById(numericProductId);
+      const deletedProduct = await productServices.deleteProductById(
+        numericProductId
+      );
 
       if (!deletedProduct) {
         console.log(
@@ -303,7 +308,11 @@ export class ProductController {
     }
   }
 
-  public async getProductsByBakeryId(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getProductsByBakeryId(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const { bakeryId, isActive } = req.body;
 
@@ -315,43 +324,78 @@ export class ProductController {
         return;
       }
 
-      const products = await productServices.findProductsByBakeryId(bakeryId, isActive);
+      const products = await productServices.findProductsByBakeryId(
+        bakeryId,
+        isActive
+      );
 
       if (products.length === 0) {
-        console.log("[src][controllers][ProductController][getProductsByBakeryId] No products found for this bakery ID");
+        console.log(
+          "[src][controllers][ProductController][getProductsByBakeryId] No products found for this bakery ID"
+        );
         res.status(404).send("No products found for this bakery ID");
         return;
       }
 
+      const today = new Date().toISOString().split("T")[0];
+
+      const modifiedProducts = products.map((product) => {
+        const todayDiscount = product.discount.find((discount) => {
+          const discountDateString =
+            typeof discount.discountDate === "string"
+              ? discount.discountDate
+              : discount.discountDate?.toISOString();
+
+          return discountDateString?.split("T")[0] === today;
+        })?.discountAmount;
+
+        return {
+          ...product,
+          todayPrice: todayDiscount || product.productPrice,
+        };
+      });
+
       res.status(200).json({
         status: 200,
-        data: products
+        data: modifiedProducts,
       });
     } catch (error) {
-      console.log("[src][controllers][ProductController][getProductsByBakeryId]", error);
+      console.log(
+        "[src][controllers][ProductController][getProductsByBakeryId]",
+        error
+      );
       next(error);
     }
   }
 
-    public async findBakeryByProductId(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { productId } = req.body;
+  public async findBakeryByProductId(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { productId } = req.body;
 
-            if (!productId) {
-                console.log("[src][controllers][ProductController][findBakeryByProductId] Product ID is required");
-                res.status(400).send("Product ID is required");
-                return;
-            }
+      if (!productId) {
+        console.log(
+          "[src][controllers][ProductController][findBakeryByProductId] Product ID is required"
+        );
+        res.status(400).send("Product ID is required");
+        return;
+      }
 
-            const product = await productServices.findBakeryByProductId(productId);
+      const product = await productServices.findBakeryByProductId(productId);
 
-            res.status(200).json({
-                status: 200,
-                data: product
-            });
-        } catch (error) {
-            console.log("[src][controllers][ProductController][findBakeryByProductId] ", error)
-            next(error);
-        }
+      res.status(200).json({
+        status: 200,
+        data: product,
+      });
+    } catch (error) {
+      console.log(
+        "[src][controllers][ProductController][findBakeryByProductId] ",
+        error
+      );
+      next(error);
     }
+  }
 }
