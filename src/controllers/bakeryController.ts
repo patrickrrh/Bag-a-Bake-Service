@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import { BakeryServices } from "../services/bakeryServices";
 import { ProductServices } from "../services/productServices";
+import { RatingServices } from "../services/ratingServices";
 import { Bakery } from "@prisma/client";
 
 const bakeryServices = new BakeryServices();
 const productServices = new ProductServices();
+const ratingServices = new RatingServices();
 
 export class BakeryController {
     public async findAllBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -25,9 +27,16 @@ export class BakeryController {
             const { bakeryId } = req.body;
 
             const bakery = await bakeryServices.findBakeryById(bakeryId);
+
+            const ratings = await ratingServices.findRatingByBakery(bakeryId);
+
+            const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
+            const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
+            const reviewCount = ratings.filter((r) => r.review !== '').length;
+
             res.status(200).json({
                 status: 200,
-                data: bakery
+                data: { bakery, prevRating: { averageRating, reviewCount } }
             });
         } catch (error) {
             console.log("[src][controllers][BakeryController][findBakeryById] ", error);
@@ -116,7 +125,7 @@ export class BakeryController {
             const { categoryId, regionId, expiringProducts } = req.body;
             let bakeries: Bakery[] | undefined;
 
-            if (categoryId.length > 0) {
+            if (Array.isArray(categoryId) &&categoryId.length > 0) {
                 const categoryBakeries = await bakeryServices.findBakeryByCategory(categoryId);
                 bakeries = bakeries
                     ? bakeries.filter(bakery => categoryBakeries?.some(categoryBakery => categoryBakery.bakeryId === bakery.bakeryId)) :
@@ -168,4 +177,25 @@ export class BakeryController {
             next(error);
         }
     }
+
+    public async updateBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { bakeryId, ...updateData } = req.body;
+    
+            const updatedBakery = await bakeryServices.updateBakeryById(parseInt(bakeryId), updateData);
+    
+            if (!updatedBakery) {
+                console.log("[src][controllers][BakeryController][updateBakery] Bakery not found");
+                res.status(404).json({ error: 'Bakery not found' });
+                return;
+            }
+    
+            console.log("[src][controllers][BakeryController][updateBakery] Bakery updated successfully");
+            res.status(200).json({ message: 'Bakery updated successfully', bakery: updatedBakery });
+        } catch (error) {
+            console.log("[src][controllers][BakeryController][updateBakery] ", error);
+            next(error);
+        }
+    }
+    
 }

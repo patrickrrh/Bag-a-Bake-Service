@@ -1,4 +1,4 @@
-import { Category, ListDiscount, Product, Bakery } from "@prisma/client";
+import { Category, ListDiscount, Product, Bakery, Prisma } from "@prisma/client";
 import databaseService from "../script";
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -13,6 +13,12 @@ export interface CreateProductInput {
   bakeryId: number;
   categoryId: number;
 }
+
+type ProductWithDiscount = Prisma.ProductGetPayload<{
+  include: {
+      discount: any
+  }
+}>
 
 export class ProductServices {
   public async createProduct(product: CreateProductInput): Promise<void> {
@@ -49,7 +55,7 @@ export class ProductServices {
 
   public async findProductById(productId: number | string): Promise<Product | null> {
     const numericProductId = Number(productId);
-  
+
     if (!numericProductId) {
       console.log(
         "[src][services][ProductServices][findProductById] Product ID is required"
@@ -69,7 +75,7 @@ export class ProductServices {
       throw new Error("Failed to find product");
     }
   }
-  
+
 
   public async updateProductById(
     productId: number,
@@ -258,52 +264,49 @@ export class ProductServices {
     }
   }
 
-    public async findBakeryByProductId(productId: number): Promise<Product | {}> {
-        try {
-            const product = await databaseService.getClient().product.findUnique({
-                where: {
-                    productId: productId,
-                },
-                select: {
-                    bakery: {
-                        select: {
-                            bakeryName: true,
-                            closingTime: true,
-                            bakeryId: true
-                        }
-                    }
-                }
-            });
-            
-            if (product !== null) {
-                return product;
-            } else {
-                return {};
+  public async findBakeryByProductId(productId: number): Promise<Product | {}> {
+    try {
+      const product = await databaseService.getClient().product.findUnique({
+        where: {
+          productId: productId,
+        },
+        select: {
+          bakery: {
+            select: {
+              bakeryName: true,
+              closingTime: true,
+              bakeryId: true,
+              // bakeryRating: true,
             }
-            
-        } catch (error) {
-            console.log("[src][services][ProductServices][findBakeryByProductId]" , error)
-            throw new Error("Failed to find bakery by product ID");
+          }
         }
-    }
+      });
 
-  public async findProductsByBakeryId(bakeryId: number): Promise<Product[]> {
-    if (!bakeryId) {
-      console.log(
-        "[src][services][ProductServices][findProductsByBakeryId] Bakery ID is required"
-      );
-      throw new Error("Bakery ID is required");
-    }
+      if (product !== null) {
+        return product;
+      } else {
+        return {};
+      }
 
+    } catch (error) {
+      console.log("[src][services][ProductServices][findBakeryByProductId]", error)
+      throw new Error("Failed to find bakery by product ID");
+    }
+  }
+
+  public async findProductsByBakeryId(bakeryId: number, isActive: number): Promise<ProductWithDiscount[]> {
     try {
       return await databaseService.getClient().product.findMany({
-        where: { bakeryId },
+        where: { 
+          bakeryId,
+          isActive
+        },
+        include: {
+          discount: true,
+        },
       });
     } catch (error) {
-      console.log(
-        "[src][services][ProductServices][findProductsByBakeryId]",
-        error
-      );
+      console.log("[src][services][ProductServices][findProductsByBakeryId]", error);
       throw new Error("Failed to find products by bakery ID");
     }
   }

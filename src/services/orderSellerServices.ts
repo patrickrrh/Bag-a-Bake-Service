@@ -1,13 +1,24 @@
-import { Order } from "@prisma/client";
+import { Order, Prisma } from "@prisma/client";
 import databaseService from "../script";
 import { Or } from "@prisma/client/runtime/library";
 
+type OrderWithDetails = Prisma.OrderGetPayload<{
+    include: {
+        orderDetail: {
+            include: {
+                product: true;
+            };
+        };
+    }
+}>
+
 export class OrderSellerServices {
-    public async findLatestPendingOrder(): Promise<Order | null> {
+    public async findLatestPendingOrder(bakeryId: number): Promise<OrderWithDetails | null> {
         try {
             return await databaseService.getClient().order.findFirst({
                 where: {
-                    orderStatus: 1
+                    orderStatus: 1,
+                    bakeryId
                 },
                 include: {
                     user: true,
@@ -24,11 +35,12 @@ export class OrderSellerServices {
         }
     }
 
-    public async findLatestOngoingOrder(): Promise<Order | null> {
+    public async findLatestOngoingOrder(bakeryId: number): Promise<OrderWithDetails | null> {
         try {
             return await databaseService.getClient().order.findFirst({
                 where: {
-                    orderStatus: 2
+                    orderStatus: 2,
+                    bakeryId
                 },
                 include: {
                     user: true,
@@ -45,11 +57,12 @@ export class OrderSellerServices {
         }
     }
 
-    public async countAllPendingOrder(): Promise<number> {
+    public async countAllPendingOrder(bakeryId: number): Promise<number> {
         try {
             return await databaseService.getClient().order.count({
                 where: {
-                    orderStatus: 1
+                    orderStatus: 1,
+                    bakeryId
                 }
             })
         } catch (error) {
@@ -58,11 +71,12 @@ export class OrderSellerServices {
         }
     }
 
-    public async countAllOngoingOrder(): Promise<number> {
+    public async countAllOngoingOrder(bakeryId: number): Promise<number> {
         try {
             return await databaseService.getClient().order.count({
                 where: {
-                    orderStatus: 2
+                    orderStatus: 2,
+                    bakeryId
                 }
             })
         } catch (error) {
@@ -71,10 +85,11 @@ export class OrderSellerServices {
         }
     }
 
-    public async findAllOrderByStatus(orderStatus: number[]): Promise<Order[]> {
+    public async findAllOrderByStatus(orderStatus: number[], bakeryId: number): Promise<OrderWithDetails[]> {
         try {
             return await databaseService.getClient().order.findMany({
                 where: {
+                    bakeryId,
                     orderStatus: {
                         in: orderStatus
                     }
