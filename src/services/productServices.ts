@@ -16,9 +16,15 @@ export interface CreateProductInput {
 
 type ProductWithDiscount = Prisma.ProductGetPayload<{
   include: {
-      discount: any
+    discount: any
   }
 }>
+
+type ProductWithBakery = {
+  bakeryName: string;
+  closingTime: string;
+  bakeryId: number;
+};
 
 export class ProductServices {
   public async createProduct(product: CreateProductInput): Promise<void> {
@@ -53,19 +59,13 @@ export class ProductServices {
     }
   }
 
-  public async findProductById(productId: number | string): Promise<Product | null> {
-    const numericProductId = Number(productId);
+  public async findProductById(productId: number): Promise<Product | null> {
 
-    if (!numericProductId) {
-      console.log(
-        "[src][services][ProductServices][findProductById] Product ID is required"
-      );
-      throw new Error("Product ID is required");
-    }
-    // console.log("product id", numericProductId);
     try {
       return await databaseService.getClient().product.findUnique({
-        where: { productId: numericProductId },
+        where: {
+          productId
+        },
         include: {
           discount: true,
         },
@@ -228,6 +228,7 @@ export class ProductServices {
         },
         include: {
           bakery: true,
+          discount: true
         },
       });
     } catch (error) {
@@ -252,6 +253,7 @@ export class ProductServices {
         ],
         include: {
           bakery: true,
+          discount: true
         },
         take: 10,
       });
@@ -264,9 +266,9 @@ export class ProductServices {
     }
   }
 
-  public async findBakeryByProductId(productId: number): Promise<Product | {}> {
+  public async findBakeryByProductId(productId: number): Promise<ProductWithBakery | null> {
     try {
-      const product = await databaseService.getClient().product.findUnique({
+      const bakery = await databaseService.getClient().product.findUnique({
         where: {
           productId: productId,
         },
@@ -276,18 +278,12 @@ export class ProductServices {
               bakeryName: true,
               closingTime: true,
               bakeryId: true,
-              // bakeryRating: true,
             }
           }
         }
       });
 
-      if (product !== null) {
-        return product;
-      } else {
-        return {};
-      }
-
+      return bakery?.bakery || null;
     } catch (error) {
       console.log("[src][services][ProductServices][findBakeryByProductId]", error)
       throw new Error("Failed to find bakery by product ID");
@@ -297,7 +293,7 @@ export class ProductServices {
   public async findProductsByBakeryId(bakeryId: number, isActive: number): Promise<ProductWithDiscount[]> {
     try {
       return await databaseService.getClient().product.findMany({
-        where: { 
+        where: {
           bakeryId,
           isActive
         },

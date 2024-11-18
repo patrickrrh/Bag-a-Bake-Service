@@ -1,8 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { ProductServices } from "../services/productServices";
 import { CreateProductInput } from "../services/productServices";
+import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
+import { RatingServices } from "../services/ratingServices";
 
 const productServices = new ProductServices();
+const ratingServices = new RatingServices();
 
 export class ProductController {
   public async createProduct(
@@ -70,9 +73,14 @@ export class ProductController {
         return;
       }
 
+      const todayPrice = getTodayPrice(createdProduct);
+      const discountPercentage = calculateDiscountPercentage(createdProduct.productPrice, todayPrice);
+
       res.status(200).json({
         status: 200,
-        data: createdProduct,
+        data: {
+          ...createdProduct, todayPrice, discountPercentage
+        },
       });
     } catch (error) {
       console.log(
@@ -274,9 +282,15 @@ export class ProductController {
         regionId
       );
 
+      const modifiedProducts = recommendedProducts.map((product) => ({
+        ...product,
+        todayPrice: getTodayPrice(product),
+        discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
+      }))
+
       res.status(200).json({
         status: 200,
-        data: recommendedProducts,
+        data: modifiedProducts,
       });
     } catch (error) {
       console.log(
@@ -295,9 +309,15 @@ export class ProductController {
     try {
       const expiringProducts = await productServices.findExpiringProducts();
 
+      const modifiedProducts = expiringProducts.map((product) => ({
+        ...product,
+        todayPrice: getTodayPrice(product),
+        discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
+      }))
+
       res.status(200).json({
         status: 200,
-        data: expiringProducts,
+        data: modifiedProducts,
       });
     } catch (error) {
       console.log(
@@ -337,23 +357,10 @@ export class ProductController {
         return;
       }
 
-      const today = new Date().toISOString().split("T")[0];
-
-      const modifiedProducts = products.map((product) => {
-        const todayDiscount = product.discount.find((discount) => {
-          const discountDateString =
-            typeof discount.discountDate === "string"
-              ? discount.discountDate
-              : discount.discountDate?.toISOString();
-
-          return discountDateString?.split("T")[0] === today;
-        })?.discountAmount;
-
-        return {
-          ...product,
-          todayPrice: todayDiscount || product.productPrice,
-        };
-      });
+      const modifiedProducts = products.map((product) => ({
+        ...product,
+        todayPrice: getTodayPrice(product),
+      }));
 
       res.status(200).json({
         status: 200,
@@ -384,11 +391,17 @@ export class ProductController {
         return;
       }
 
-      const product = await productServices.findBakeryByProductId(productId);
+      const bakery = await productServices.findBakeryByProductId(productId);
+
+      const ratings = await ratingServices.findRatingByBakery(bakery?.bakeryId as number);
+
+      const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
+      const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
+      const reviewCount = ratings.filter((r) => r.review !== '').length;
 
       res.status(200).json({
         status: 200,
-        data: product,
+        data: { bakery, prevRating: { averageRating, reviewCount } },
       });
     } catch (error) {
       console.log(
