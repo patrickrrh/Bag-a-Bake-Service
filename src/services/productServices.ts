@@ -228,6 +228,7 @@ export class ProductServices {
         },
         include: {
           bakery: true,
+          discount: true
         },
       });
     } catch (error) {
@@ -252,6 +253,7 @@ export class ProductServices {
         ],
         include: {
           bakery: true,
+          discount: true
         },
         take: 10,
       });

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ProductServices } from "../services/productServices";
 import { CreateProductInput } from "../services/productServices";
+import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
 
 const productServices = new ProductServices();
 
@@ -274,9 +275,15 @@ export class ProductController {
         regionId
       );
 
+      const modifiedProducts = recommendedProducts.map((product) => ({
+        ...product,
+        todayPrice: getTodayPrice(product),
+        discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
+      }))
+
       res.status(200).json({
         status: 200,
-        data: recommendedProducts,
+        data: modifiedProducts,
       });
     } catch (error) {
       console.log(
@@ -295,9 +302,15 @@ export class ProductController {
     try {
       const expiringProducts = await productServices.findExpiringProducts();
 
+      const modifiedProducts = expiringProducts.map((product) => ({
+        ...product,
+        todayPrice: getTodayPrice(product),
+        discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
+      }))
+
       res.status(200).json({
         status: 200,
-        data: expiringProducts,
+        data: modifiedProducts,
       });
     } catch (error) {
       console.log(
@@ -337,23 +350,10 @@ export class ProductController {
         return;
       }
 
-      const today = new Date().toISOString().split("T")[0];
-
-      const modifiedProducts = products.map((product) => {
-        const todayDiscount = product.discount.find((discount) => {
-          const discountDateString =
-            typeof discount.discountDate === "string"
-              ? discount.discountDate
-              : discount.discountDate?.toISOString();
-
-          return discountDateString?.split("T")[0] === today;
-        })?.discountAmount;
-
-        return {
-          ...product,
-          todayPrice: todayDiscount || product.productPrice,
-        };
-      });
+      const modifiedProducts = products.map((product) => ({
+        ...product,
+        todayPrice: getTodayPrice(product),
+      }));
 
       res.status(200).json({
         status: 200,

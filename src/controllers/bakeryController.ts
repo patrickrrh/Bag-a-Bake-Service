@@ -3,6 +3,7 @@ import { BakeryServices } from "../services/bakeryServices";
 import { ProductServices } from "../services/productServices";
 import { RatingServices } from "../services/ratingServices";
 import { Bakery } from "@prisma/client";
+import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
 
 const bakeryServices = new BakeryServices();
 const productServices = new ProductServices();
@@ -33,6 +34,19 @@ export class BakeryController {
             const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
             const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
             const reviewCount = ratings.filter((r) => r.review !== '').length;
+
+            if (bakery?.product) {
+                bakery.product = bakery.product.map((product) => {
+                    const todayPrice = getTodayPrice(product);
+                    const discountPercentage = calculateDiscountPercentage(product.productPrice, todayPrice);
+    
+                    return {
+                        ...product,
+                        todayPrice,
+                        discountPercentage,
+                    };
+                });
+            }
 
             res.status(200).json({
                 status: 200,
@@ -159,7 +173,7 @@ export class BakeryController {
                         expiringBakeriesMap.set(bakery.bakeryId, bakery);
                     }
                 }
-            
+
                 const expiringBakeries = Array.from(expiringBakeriesMap.values());
 
                 bakeries = bakeries
@@ -170,7 +184,7 @@ export class BakeryController {
             if (!bakeries) {
                 bakeries = await bakeryServices.findAllBakery();
             }
-            
+
             res.status(200).json({
                 status: 200,
                 data: bakeries
@@ -184,15 +198,15 @@ export class BakeryController {
     public async updateBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { bakeryId, ...updateData } = req.body;
-    
+
             const updatedBakery = await bakeryServices.updateBakeryById(parseInt(bakeryId), updateData);
-    
+
             if (!updatedBakery) {
                 console.log("[src][controllers][BakeryController][updateBakery] Bakery not found");
                 res.status(404).json({ error: 'Bakery not found' });
                 return;
             }
-    
+
             console.log("[src][controllers][BakeryController][updateBakery] Bakery updated successfully");
             res.status(200).json({ message: 'Bakery updated successfully', bakery: updatedBakery });
         } catch (error) {
@@ -200,5 +214,5 @@ export class BakeryController {
             next(error);
         }
     }
-    
+
 }

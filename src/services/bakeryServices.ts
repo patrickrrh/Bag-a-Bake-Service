@@ -1,4 +1,4 @@
-import { Bakery } from "@prisma/client";
+import { Bakery, Prisma } from "@prisma/client";
 import databaseService from "../script";
 
 export interface CreateBakeryInput {
@@ -11,6 +11,16 @@ export interface CreateBakeryInput {
     openingTime: string;
     closingTime: string;
 }
+
+type BakeryWithProduct = Prisma.BakeryGetPayload<{
+    include: {
+        product: {
+            include: {
+                discount: true
+            }
+        }
+    }
+}>
 
 export class BakeryServices {
     public async createBakery(bakery: CreateBakeryInput): Promise<Bakery> {
@@ -38,7 +48,7 @@ export class BakeryServices {
         }
     }
 
-    public async findBakeryById(bakeryId: number): Promise<Bakery | null> {
+    public async findBakeryById(bakeryId: number): Promise<BakeryWithProduct | null> {
         try {
             return await databaseService.getClient().bakery.findUnique({
                 where: {
@@ -46,7 +56,11 @@ export class BakeryServices {
                 },
                 include: {
                     regionBakery: true,
-                    product: true,
+                    product: {
+                        include: {
+                            discount: true
+                        }
+                    },
                     favorite: true
                 }
             })
