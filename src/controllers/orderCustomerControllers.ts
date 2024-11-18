@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { OrderCustomerServices } from "../services/orderCustomerServices";
 import { RatingServices } from "../services/ratingServices";
+import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
 
 const orderCustomerServices = new OrderCustomerServices();
 const ratingServices = new RatingServices();
@@ -10,6 +11,7 @@ export class OrderCustomerController {
     public async createOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { userId, orderDetail, bakeryId } = req.body
+
             if (( !userId || !orderDetail || !bakeryId )) {
                 res.status(400)
                 throw new Error('All fields must be filled')
@@ -52,6 +54,19 @@ export class OrderCustomerController {
                     const averageRating = prevRating.length > 0 ? totalRatings / prevRating.length : 0;
                     const reviewCount = prevRating.filter((r) => r.review !== '').length;
 
+                    const updatedOrderDetails = order.orderDetail.map((detail) => {
+                        const todayPrice = getTodayPrice(detail.product);
+                        return {
+                            ...detail,
+                            product: {
+                                ...detail.product,
+                                todayPrice
+                            },
+                            totalDetailPrice: detail.productQuantity * todayPrice.toNumber(),
+                            discountPercentage: calculateDiscountPercentage(detail.product.productPrice, todayPrice),
+                        }
+                    });
+
                     const totalOrderQuantity = order.orderDetail.reduce(
                         (sum, detail) => sum + detail.productQuantity, 0
                     )
@@ -59,7 +74,7 @@ export class OrderCustomerController {
                         (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
                     )
 
-                    return { ...order, isRated, prevRating: { averageRating, reviewCount }, totalOrderQuantity, totalOrderPrice };
+                    return { ...order, orderDetail: updatedOrderDetails, isRated, prevRating: { averageRating, reviewCount }, totalOrderQuantity, totalOrderPrice };
                 })
             )
 

@@ -30,7 +30,8 @@ export class OrderCustomerServices {
                             productQuantity: detail.productQuantity,
                         }))
                     },
-                    bakeryId: order.bakeryId
+                    bakeryId: order.bakeryId,
+                    orderStatus: 1
                 },
                 include: {
                     orderDetail: true,
@@ -51,10 +52,18 @@ export class OrderCustomerServices {
                 include: {
                     orderDetail: {
                         include: {
-                            product: true,
+                            product: {
+                                include: {
+                                    discount: true
+                                }
+                            },
                         },
                     },
-                    bakery: true,
+                    bakery: {
+                        include: {
+                            regionBakery: true
+                        }
+                    },
                 },
             });
 
