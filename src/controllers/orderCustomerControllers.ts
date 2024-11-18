@@ -19,7 +19,11 @@ export class OrderCustomerController {
                 orderDetail,
                 bakeryId
             });
-            res.status(201).json(order);
+
+            res.status(200).json({
+                status: 200,
+                data: order
+            });
         } catch (error) {
             console.log("[src][controllers][OrderCustomerController][createOrder] ", error);
             next(error);
