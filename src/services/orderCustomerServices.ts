@@ -59,11 +59,7 @@ export class OrderCustomerServices {
                             },
                         },
                     },
-                    bakery: {
-                        include: {
-                            regionBakery: true
-                        }
-                    },
+                    bakery: true
                 },
             });
 

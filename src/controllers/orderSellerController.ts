@@ -1,7 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import { OrderSellerServices } from "../services/orderSellerServices";
+import { getTodayPrice } from "../utilities/productUtils";
+import { ProductServices } from "../services/productServices";
 
 const orderSellerServices = new OrderSellerServices();
+const productServices = new ProductServices();
 
 export class OrderSellerController {
     public async findLatestPendingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -12,11 +15,11 @@ export class OrderSellerController {
 
             const updatedOrderDetails = latestPendingOrder?.orderDetail.map((detail) => ({
                 ...detail,
-                totalDetailPrice: detail.productQuantity * detail.product.productPrice.toNumber(),
+                totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
             }));
 
             const totalOrderPrice = latestPendingOrder?.orderDetail.reduce(
-                (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+                (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
             )
 
             res.status(200).json({
@@ -37,11 +40,11 @@ export class OrderSellerController {
 
             const updatedOrderDetails = latestOngoingOrder?.orderDetail.map((detail) => ({
                 ...detail,
-                totalDetailPrice: detail.productQuantity * detail.product.productPrice.toNumber(),
+                totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
             }));
 
             const totalOrderPrice = latestOngoingOrder?.orderDetail.reduce(
-                (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+                (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
             )
 
             res.status(200).json({
@@ -91,18 +94,18 @@ export class OrderSellerController {
             if (!Array.isArray(orderStatus)) {
                 orderStatus = orderStatus === 3 ? [3, 4] : [orderStatus];
             }
-            
+
             const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus, bakeryId);
 
             const newOrderData = await Promise.all(
                 allOrder.map(async (order) => {
                     const updatedOrderDetails = order.orderDetail.map((detail) => ({
                         ...detail,
-                        totalDetailPrice: detail.productQuantity * detail.product.productPrice.toNumber(),
+                        totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
                     }));
 
                     const totalOrderPrice = order.orderDetail.reduce(
-                        (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+                        (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
                     )
 
                     return { ...order, orderDetail: updatedOrderDetails, totalOrderPrice };
@@ -131,14 +134,34 @@ export class OrderSellerController {
             }
 
             await orderSellerServices.actionOrder(orderId, orderStatus);
+
+            if (orderStatus === 2) {
+                const orderDetails = await orderSellerServices.findOrderDetailByOrderId(orderId);
+
+                if (orderDetails.length === 0) {
+                    res.status(404).json({
+                        status: 404,
+                        message: "Order details not found",
+                    });
+                    return;
+                }
+
+                await Promise.all(
+                    orderDetails.map(async (detail) => {
+                        const product = await productServices.findProductById(detail.productId);
+                        const updatedProductStock = Number(product?.productStock) - detail.productQuantity
+                        await productServices.updateProductStock(detail.productId, updatedProductStock);
+                    })
+                )
+            }
+
             res.status(200).json({
                 status: 200,
                 message: "Success"
             })
-
         } catch (error) {
             console.log("[src][controllers][OrderSellerController][actionOrder] ", error)
             next(error)
         }
-    }  
+    }
 }

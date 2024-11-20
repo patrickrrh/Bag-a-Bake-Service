@@ -5,12 +5,15 @@ import { json } from 'express';
 
 export interface CreateUserInput {
     roleId: number;
-    regionId?: number;
     userName: string;
     userImage?: string;
     userPhoneNumber?: string;
     email: string;
     password: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    pushToken?: string;
 }
 
 export class UserServices {
@@ -57,12 +60,7 @@ export class UserServices {
                     userId
                  },
                  include: {
-                    regionUser: true,
-                    bakery: {
-                        include: {
-                            regionBakery: true
-                        }
-                    }
+                    bakery: true
                  }
             })
         } catch (error) {
