@@ -118,4 +118,24 @@ export class OrderCustomerController {
             next(error);
         }
     }
+
+    public async cancelOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { orderId } = req.body;
+            const order = await orderCustomerServices.cancelOrder(orderId);
+    
+            if (!order) {
+                res.status(404).json({ message: "Order not found" });
+                return;
+            }
+    
+            res.status(200).json({
+                status: 200,
+                data: order,
+            });
+        } catch (error) {
+            console.log("[src][controllers][OrderCustomerController][cancelOrder] ", error);
+            next(error);
+        }
+    }
 }
