@@ -71,7 +71,7 @@ export class OrderCustomerController {
                         (sum, detail) => sum + detail.productQuantity, 0
                     )
                     const totalOrderPrice = order.orderDetail.reduce(
-                        (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+                        (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
                     )
 
                     return { ...order, orderDetail: updatedOrderDetails, isRated, prevRating: { averageRating, reviewCount }, totalOrderQuantity, totalOrderPrice };

@@ -26,6 +26,12 @@ type ProductWithBakery = {
   bakeryId: number;
 };
 
+type ProductWithBakeryAndDiscount = Prisma.ProductGetPayload<{
+  include: {
+    bakery: any
+  }
+}>
+
 export class ProductServices {
   public async createProduct(product: CreateProductInput): Promise<void> {
     const prisma = databaseService.getClient();
@@ -215,14 +221,9 @@ export class ProductServices {
     }
   }
 
-  public async findRecommendedProducts(regionId: number): Promise<Product[]> {
+  public async findRecommendedProducts(): Promise<ProductWithBakeryAndDiscount[]> {
     try {
       return await databaseService.getClient().product.findMany({
-        where: {
-          bakery: {
-            regionId: regionId,
-          },
-        },
         orderBy: {
           productStock: "asc",
         },
@@ -237,7 +238,7 @@ export class ProductServices {
     }
   }
 
-  public async findExpiringProducts(): Promise<Product[]> {
+  public async findExpiringProducts(): Promise<ProductWithBakeryAndDiscount[]> {
     try {
       return await databaseService.getClient().product.findMany({
         where: {
@@ -304,6 +305,22 @@ export class ProductServices {
     } catch (error) {
       console.log("[src][services][ProductServices][findProductsByBakeryId]", error);
       throw new Error("Failed to find products by bakery ID");
+    }
+  }
+
+  public async updateProductStock(productId: number, productStock: number): Promise<void> {
+    try {
+      await databaseService.getClient().product.update({
+        where: {
+          productId
+        },
+        data: {
+          productStock
+        }
+      })
+    } catch (error) {
+      console.log("[src][services][ProductServices][updateProductStock]", error);
+      throw new Error("Failed to update product stock");
     }
   }
 }

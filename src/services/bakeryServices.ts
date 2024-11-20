@@ -3,13 +3,15 @@ import databaseService from "../script";
 
 export interface CreateBakeryInput {
     userId: number;
-    regionId: number;
     bakeryName: string;
     bakeryPhoneNumber: string;
     bakeryImage: string;
     bakeryDescription: string;
     openingTime: string;
     closingTime: string;
+    bakeryAddress: string;
+    bakeryLatitude: number;
+    bakeryLongitude: number;
 }
 
 type BakeryWithProduct = Prisma.BakeryGetPayload<{
@@ -38,7 +40,6 @@ export class BakeryServices {
         try {
             return await databaseService.getClient().bakery.findMany({
                 include: {
-                    regionBakery: true,
                     favorite: true
                 }
             })
@@ -55,7 +56,6 @@ export class BakeryServices {
                     bakeryId
                 },
                 include: {
-                    regionBakery: true,
                     product: {
                         include: {
                             discount: true
@@ -97,7 +97,6 @@ export class BakeryServices {
                     }
                 },
                 include: {
-                    regionBakery: true,
                     favorite: true,
                 }
             });
@@ -118,7 +117,6 @@ export class BakeryServices {
                 include: {
                     bakery: {
                         include: {
-                            regionBakery: true,
                             product: true
                         }
                     },
@@ -128,25 +126,6 @@ export class BakeryServices {
             return bakery?.bakery || null;
         } catch (error) {
             console.log("[src][services][BakeryServices][findBakeryByProduct] ", error)
-            throw new Error("Failed to find bakery")
-        }
-    }
-
-    public async findBakeryByRegion(regionId: number): Promise<Bakery[] | []> {
-        try {
-            const bakery = await databaseService.getClient().bakery.findMany({
-                where: {
-                    regionId: regionId
-                },
-                include: {
-                    regionBakery: true,
-                    favorite: true
-                }
-            })
-
-            return bakery
-        } catch (error) {
-            console.log("[src][services][BakeryServices][findBakeryByRegion] ", error)
             throw new Error("Failed to find bakery")
         }
     }

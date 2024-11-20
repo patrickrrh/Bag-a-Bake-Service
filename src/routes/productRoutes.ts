@@ -12,7 +12,7 @@ router.get("/search/product", productController.searchProductByKeyword);
 router.delete("/delete/product/id", productController.deleteProductById);
 router.post("/get/products/category", productController.getProductsByCategory);
 router.post("/get/recommended/products", productController.findRecommendedProducts);
-router.get("/get/expiring/products", productController.findExpiringProducts);
+router.post("/get/expiring/products", productController.findExpiringProducts);
 router.post("/get/bakery/product", productController.findBakeryByProductId);
 router.post("/get/products/bakery", productController.getProductsByBakeryId);
 

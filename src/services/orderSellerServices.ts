@@ -1,4 +1,4 @@
-import { Order, Prisma } from "@prisma/client";
+import { Order, OrderDetail, Prisma } from "@prisma/client";
 import databaseService from "../script";
 import { Or } from "@prisma/client/runtime/library";
 
@@ -24,7 +24,11 @@ export class OrderSellerServices {
                     user: true,
                     orderDetail: {
                         include: {
-                            product: true
+                            product: {
+                                include: {
+                                    discount: true
+                                }
+                            }
                         }
                     }
                 }
@@ -46,7 +50,11 @@ export class OrderSellerServices {
                     user: true,
                     orderDetail: {
                         include: {
-                            product: true
+                            product: {
+                                include: {
+                                    discount: true
+                                }
+                            }
                         }
                     }
                 }
@@ -98,7 +106,11 @@ export class OrderSellerServices {
                     user: true,
                     orderDetail: {
                         include: {
-                            product: true
+                            product: {
+                                include: {
+                                    discount: true
+                                }
+                            }
                         }
                     }
                 }
@@ -122,6 +134,19 @@ export class OrderSellerServices {
         } catch (error) {
             console.log("[src][services][OrderSellerServices][actionOrder] ", error)
             throw new Error("Failed to action order")
+        }
+    }
+
+    public async findOrderDetailByOrderId(orderId: number): Promise<OrderDetail[]> {
+        try {
+            return await databaseService.getClient().orderDetail.findMany({
+                where: {
+                    orderId
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][OrderSellerServices][findOrderDetailByOrderId] ", error)
+            throw new Error("Failed to find order detail")
         }
     }
 }

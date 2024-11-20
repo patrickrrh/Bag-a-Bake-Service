@@ -14,6 +14,6 @@ router.post("/send/otp", authController.sendOTP);
 router.post("/verify/otp", authController.verifyOTP);
 router.put("/change/password", authController.changePassword);
 router.put("/update/user", authController.updateUser);
-
+router.put("/revoke/tokens", authController.revokeTokens);
 
 export default router

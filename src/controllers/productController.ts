@@ -3,6 +3,8 @@ import { ProductServices } from "../services/productServices";
 import { CreateProductInput } from "../services/productServices";
 import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
 import { RatingServices } from "../services/ratingServices";
+import getDistance from "geolib/es/getPreciseDistance";
+import { getPreciseDistance } from "geolib";
 
 const productServices = new ProductServices();
 const ratingServices = new RatingServices();
@@ -262,58 +264,79 @@ export class ProductController {
     }
   }
 
-  public async findRecommendedProducts(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async findRecommendedProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { regionId } = req.body;
+      const products = await productServices.findRecommendedProducts();
 
-      if (!regionId) {
-        console.log(
-          "[src][controllers][ProductController][findRecommendedProducts] Region ID is required"
-        );
-        res.status(400).send("Region ID is required");
-        return;
-      }
+      const userLocation = {
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+      };
 
-      const recommendedProducts = await productServices.findRecommendedProducts(
-        regionId
+      const nearestProductsMap = new Map();
+
+      products.forEach((product) => {
+        const bakeryLocation = {
+          latitude: product.bakery.bakeryLatitude,
+          longitude: product.bakery.bakeryLongitude,
+        };
+
+        const distance = getPreciseDistance(userLocation, bakeryLocation, 0.01);
+        const distanceInKm = parseFloat((distance / 1000).toFixed(2));
+
+        if (
+          !nearestProductsMap.has(product.bakery.bakeryId) ||
+          distance < nearestProductsMap.get(product.bakery.bakeryId).distance
+        ) {
+          nearestProductsMap.set(product.bakery.bakeryId, {
+            ...product,
+            todayPrice: getTodayPrice(product),
+            discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
+            distanceInKm,
+          });
+        }
+      });
+
+      const sortedNearestProducts = Array.from(nearestProductsMap.values()).sort(
+        (a, b) => a.distance - b.distance
       );
-
-      const modifiedProducts = recommendedProducts.map((product) => ({
-        ...product,
-        todayPrice: getTodayPrice(product),
-        discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
-      }))
+      const topNearestProducts = sortedNearestProducts.slice(0, 5);
 
       res.status(200).json({
         status: 200,
-        data: modifiedProducts,
+        data: topNearestProducts,
       });
     } catch (error) {
-      console.log(
-        "[src][controllers][ProductController][findRecommendedProducts] ",
-        error
-      );
+      console.error('[src][controllers][ProductController][findRecommendedProducts]', error);
       next(error);
     }
   }
 
-  public async findExpiringProducts(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async findExpiringProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const expiringProducts = await productServices.findExpiringProducts();
 
-      const modifiedProducts = expiringProducts.map((product) => ({
-        ...product,
-        todayPrice: getTodayPrice(product),
-        discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
-      }))
+      const userLocation = {
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+      };
+
+      const modifiedProducts = expiringProducts.map((product) => {
+        const bakeryLocation = {
+          latitude: product.bakery.bakeryLatitude,
+          longitude: product.bakery.bakeryLongitude,
+        };
+
+        const distance = getPreciseDistance(userLocation, bakeryLocation, 0.01);
+        const distanceInKm = parseFloat((distance / 1000).toFixed(2));
+
+        return {
+          ...product,
+          todayPrice: getTodayPrice(product),
+          discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
+          distanceInKm,
+        };
+      });
 
       res.status(200).json({
         status: 200,
