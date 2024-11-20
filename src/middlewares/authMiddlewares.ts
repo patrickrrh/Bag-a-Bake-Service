@@ -11,8 +11,8 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
 
     try {
         const token = authorization.split(' ')[1];
-        const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as { idPengguna: number };
-        req.body.idPengguna = payload.idPengguna;
+        const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as { userId: number };
+        req.body.userId = payload.userId;
         next();
     } catch (error) {
         res.status(401);

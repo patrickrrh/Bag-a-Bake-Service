@@ -1,16 +1,28 @@
-import { Bakery } from "@prisma/client";
+import { Bakery, Prisma } from "@prisma/client";
 import databaseService from "../script";
 
 export interface CreateBakeryInput {
     userId: number;
-    regionId: number;
     bakeryName: string;
     bakeryPhoneNumber: string;
     bakeryImage: string;
     bakeryDescription: string;
     openingTime: string;
     closingTime: string;
+    bakeryAddress: string;
+    bakeryLatitude: number;
+    bakeryLongitude: number;
 }
+
+type BakeryWithProduct = Prisma.BakeryGetPayload<{
+    include: {
+        product: {
+            include: {
+                discount: true
+            }
+        }
+    }
+}>
 
 export class BakeryServices {
     public async createBakery(bakery: CreateBakeryInput): Promise<Bakery> {
@@ -28,7 +40,6 @@ export class BakeryServices {
         try {
             return await databaseService.getClient().bakery.findMany({
                 include: {
-                    regionBakery: true,
                     favorite: true
                 }
             })
@@ -38,15 +49,19 @@ export class BakeryServices {
         }
     }
 
-    public async findBakeryById(bakeryId: number): Promise<Bakery | null> {
+    public async findBakeryById(bakeryId: number): Promise<BakeryWithProduct | null> {
         try {
             return await databaseService.getClient().bakery.findUnique({
                 where: {
                     bakeryId
                 },
                 include: {
-                    regionBakery: true,
-                    product: true
+                    product: {
+                        include: {
+                            discount: true
+                        }
+                    },
+                    favorite: true
                 }
             })
         } catch (error) {
@@ -82,7 +97,6 @@ export class BakeryServices {
                     }
                 },
                 include: {
-                    regionBakery: true,
                     favorite: true,
                 }
             });
@@ -103,7 +117,6 @@ export class BakeryServices {
                 include: {
                     bakery: {
                         include: {
-                            regionBakery: true,
                             product: true
                         }
                     },
@@ -113,25 +126,6 @@ export class BakeryServices {
             return bakery?.bakery || null;
         } catch (error) {
             console.log("[src][services][BakeryServices][findBakeryByProduct] ", error)
-            throw new Error("Failed to find bakery")
-        }
-    }
-
-    public async findBakeryByRegion(regionId: number): Promise<Bakery[] | []> {
-        try {
-            const bakery = await databaseService.getClient().bakery.findMany({
-                where: {
-                    regionId: regionId
-                },
-                include: {
-                    regionBakery: true,
-                    favorite: true
-                }
-            })
-
-            return bakery
-        } catch (error) {
-            console.log("[src][services][BakeryServices][findBakeryByRegion] ", error)
             throw new Error("Failed to find bakery")
         }
     }

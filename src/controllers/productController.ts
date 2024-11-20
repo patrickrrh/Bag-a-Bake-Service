@@ -1,9 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import { ProductServices } from "../services/productServices";
 import { CreateProductInput } from "../services/productServices";
+import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
+import { RatingServices } from "../services/ratingServices";
+import getDistance from "geolib/es/getPreciseDistance";
+import { getPreciseDistance } from "geolib";
 import cron from "node-cron";
 
 const productServices = new ProductServices();
+const ratingServices = new RatingServices();
 
 export class ProductController {
   constructor() {
@@ -89,9 +94,14 @@ export class ProductController {
         return;
       }
 
+      const todayPrice = getTodayPrice(createdProduct);
+      const discountPercentage = calculateDiscountPercentage(createdProduct.productPrice, todayPrice);
+
       res.status(200).json({
         status: 200,
-        data: createdProduct,
+        data: {
+          ...createdProduct, todayPrice, discountPercentage
+        },
       });
     } catch (error) {
       console.log(
@@ -271,50 +281,83 @@ export class ProductController {
     }
   }
 
-  public async findRecommendedProducts(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async findRecommendedProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { regionId } = req.body;
+      const products = await productServices.findRecommendedProducts();
 
-      if (!regionId) {
-        console.log(
-          "[src][controllers][ProductController][findRecommendedProducts] Region ID is required"
-        );
-        res.status(400).send("Region ID is required");
-        return;
-      }
+      const userLocation = {
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+      };
 
-      const recommendedProducts = await productServices.findRecommendedProducts(
-        regionId
+      const nearestProductsMap = new Map();
+
+      products.forEach((product) => {
+        const bakeryLocation = {
+          latitude: product.bakery.bakeryLatitude,
+          longitude: product.bakery.bakeryLongitude,
+        };
+
+        const distance = getPreciseDistance(userLocation, bakeryLocation, 0.01);
+        const distanceInKm = parseFloat((distance / 1000).toFixed(2));
+
+        if (
+          !nearestProductsMap.has(product.bakery.bakeryId) ||
+          distance < nearestProductsMap.get(product.bakery.bakeryId).distance
+        ) {
+          nearestProductsMap.set(product.bakery.bakeryId, {
+            ...product,
+            todayPrice: getTodayPrice(product),
+            discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
+            distanceInKm,
+          });
+        }
+      });
+
+      const sortedNearestProducts = Array.from(nearestProductsMap.values()).sort(
+        (a, b) => a.distance - b.distance
       );
+      const topNearestProducts = sortedNearestProducts.slice(0, 5);
 
       res.status(200).json({
         status: 200,
-        data: recommendedProducts,
+        data: topNearestProducts,
       });
     } catch (error) {
-      console.log(
-        "[src][controllers][ProductController][findRecommendedProducts] ",
-        error
-      );
+      console.error('[src][controllers][ProductController][findRecommendedProducts]', error);
       next(error);
     }
   }
 
-  public async findExpiringProducts(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  public async findExpiringProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const expiringProducts = await productServices.findExpiringProducts();
 
+      const userLocation = {
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+      };
+
+      const modifiedProducts = expiringProducts.map((product) => {
+        const bakeryLocation = {
+          latitude: product.bakery.bakeryLatitude,
+          longitude: product.bakery.bakeryLongitude,
+        };
+
+        const distance = getPreciseDistance(userLocation, bakeryLocation, 0.01);
+        const distanceInKm = parseFloat((distance / 1000).toFixed(2));
+
+        return {
+          ...product,
+          todayPrice: getTodayPrice(product),
+          discountPercentage: calculateDiscountPercentage(product.productPrice, getTodayPrice(product)),
+          distanceInKm,
+        };
+      });
+
       res.status(200).json({
         status: 200,
-        data: expiringProducts,
+        data: modifiedProducts,
       });
     } catch (error) {
       console.log(
@@ -354,23 +397,10 @@ export class ProductController {
         return;
       }
 
-      const today = new Date().toISOString().split("T")[0];
-
-      const modifiedProducts = products.map((product) => {
-        const todayDiscount = product.discount.find((discount) => {
-          const discountDateString =
-            typeof discount.discountDate === "string"
-              ? discount.discountDate
-              : discount.discountDate?.toISOString();
-
-          return discountDateString?.split("T")[0] === today;
-        })?.discountAmount;
-
-        return {
-          ...product,
-          todayPrice: todayDiscount || product.productPrice,
-        };
-      });
+      const modifiedProducts = products.map((product) => ({
+        ...product,
+        todayPrice: getTodayPrice(product),
+      }));
 
       res.status(200).json({
         status: 200,
@@ -401,11 +431,17 @@ export class ProductController {
         return;
       }
 
-      const product = await productServices.findBakeryByProductId(productId);
+      const bakery = await productServices.findBakeryByProductId(productId);
+
+      const ratings = await ratingServices.findRatingByBakery(bakery?.bakeryId as number);
+
+      const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
+      const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
+      const reviewCount = ratings.filter((r) => r.review !== '').length;
 
       res.status(200).json({
         status: 200,
-        data: product,
+        data: { bakery, prevRating: { averageRating, reviewCount } },
       });
     } catch (error) {
       console.log(

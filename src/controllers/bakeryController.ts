@@ -3,6 +3,9 @@ import { BakeryServices } from "../services/bakeryServices";
 import { ProductServices } from "../services/productServices";
 import { RatingServices } from "../services/ratingServices";
 import { Bakery } from "@prisma/client";
+import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
+import getDistance from "geolib/es/getPreciseDistance";
+import { getPreciseDistance } from "geolib";
 
 const bakeryServices = new BakeryServices();
 const productServices = new ProductServices();
@@ -33,6 +36,19 @@ export class BakeryController {
             const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
             const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
             const reviewCount = ratings.filter((r) => r.review !== '').length;
+
+            if (bakery?.product) {
+                bakery.product = bakery.product.map((product) => {
+                    const todayPrice = getTodayPrice(product);
+                    const discountPercentage = calculateDiscountPercentage(product.productPrice, todayPrice);
+
+                    return {
+                        ...product,
+                        todayPrice,
+                        discountPercentage,
+                    };
+                });
+            }
 
             res.status(200).json({
                 status: 200,
@@ -74,20 +90,20 @@ export class BakeryController {
         }
     }
 
-    public async findBakeryByRegion(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { regionId } = req.body;
+    // public async findBakeryByRegion(req: Request, res: Response, next: NextFunction): Promise<void> {
+    //     try {
+    //         const { regionId } = req.body;
 
-            const bakery = await bakeryServices.findBakeryByRegion(regionId);
-            res.status(200).json({
-                status: 200,
-                data: bakery
-            });
-        } catch (error) {
-            console.log("[src][controllers][BakeryController][findBakeryByRegion] ", error);
-            next(error);
-        }
-    }
+    //         const bakery = await bakeryServices.findBakeryByRegion(regionId);
+    //         res.status(200).json({
+    //             status: 200,
+    //             data: bakery
+    //         });
+    //     } catch (error) {
+    //         console.log("[src][controllers][BakeryController][findBakeryByRegion] ", error);
+    //         next(error);
+    //     }
+    // }
 
     public async findBakeryByExpiringProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -122,21 +138,15 @@ export class BakeryController {
 
     public async findBakeryWithFilters(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { categoryId, regionId, expiringProducts } = req.body;
+            const { categoryId, userLocationFilter, expiringProducts } = req.body;
+            const userLocation = { latitude: req.body.latitude, longitude: req.body.longitude };
             let bakeries: Bakery[] | undefined;
 
-            if (Array.isArray(categoryId) &&categoryId.length > 0) {
+            if (Array.isArray(categoryId) && categoryId.length > 0) {
                 const categoryBakeries = await bakeryServices.findBakeryByCategory(categoryId);
                 bakeries = bakeries
                     ? bakeries.filter(bakery => categoryBakeries?.some(categoryBakery => categoryBakery.bakeryId === bakery.bakeryId)) :
                     categoryBakeries;
-            }
-
-            if (regionId) {
-                const regionBakeries = await bakeryServices.findBakeryByRegion(regionId);
-                bakeries = bakeries
-                    ? bakeries.filter(bakery => regionBakeries?.some(regionBakery => regionBakery.bakeryId === bakery.bakeryId)) :
-                    regionBakeries;
             }
 
             if (expiringProducts) {
@@ -151,13 +161,16 @@ export class BakeryController {
                     return;
                 }
 
-                const expiringBakeries: Bakery[] = [];
+                const expiringBakeriesMap = new Map<number, Bakery>();
+
                 for (const product of expiringProducts) {
                     const bakery = await bakeryServices.findBakeryById(product.bakeryId);
-                    if (bakery) {
-                        expiringBakeries.push(bakery);
+                    if (bakery && !expiringBakeriesMap.has(bakery.bakeryId)) {
+                        expiringBakeriesMap.set(bakery.bakeryId, bakery);
                     }
                 }
+
+                const expiringBakeries = Array.from(expiringBakeriesMap.values());
 
                 bakeries = bakeries
                     ? bakeries.filter(bakery => expiringBakeries.some(expBakery => expBakery.bakeryId === bakery.bakeryId))
@@ -167,11 +180,33 @@ export class BakeryController {
             if (!bakeries) {
                 bakeries = await bakeryServices.findAllBakery();
             }
-            
-            res.status(200).json({
-                status: 200,
-                data: bakeries
-            })
+
+            const updatedBakeries = bakeries.map((bakery) => {
+                const bakeryLocation = { latitude: bakery.bakeryLatitude, longitude: bakery.bakeryLongitude };
+
+                const distance = getPreciseDistance(userLocation, bakeryLocation, 0.01);
+                const distanceInKm = parseFloat((distance / 1000).toFixed(2));
+
+                return {
+                    ...bakery,
+                    distanceInKm
+                };
+            });
+
+            if (userLocationFilter) {
+                const top5NearestBakeries = updatedBakeries
+                    .sort((a, b) => a.distanceInKm - b.distanceInKm)
+                    .slice(0, 5);
+                res.status(200).json({
+                    status: 200,
+                    data: top5NearestBakeries,
+                });
+            } else {
+                res.status(200).json({
+                    status: 200,
+                    data: updatedBakeries,
+                });
+            }
         } catch (error) {
             console.log("[src][controllers][BakeryController][findBakeryWithFilters] ", error);
             next(error);
@@ -181,15 +216,15 @@ export class BakeryController {
     public async updateBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { bakeryId, ...updateData } = req.body;
-    
+
             const updatedBakery = await bakeryServices.updateBakeryById(parseInt(bakeryId), updateData);
-    
+
             if (!updatedBakery) {
                 console.log("[src][controllers][BakeryController][updateBakery] Bakery not found");
                 res.status(404).json({ error: 'Bakery not found' });
                 return;
             }
-    
+
             console.log("[src][controllers][BakeryController][updateBakery] Bakery updated successfully");
             res.status(200).json({ message: 'Bakery updated successfully', bakery: updatedBakery });
         } catch (error) {
@@ -197,5 +232,5 @@ export class BakeryController {
             next(error);
         }
     }
-    
+
 }

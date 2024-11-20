@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { OrderCustomerServices } from "../services/orderCustomerServices";
 import { RatingServices } from "../services/ratingServices";
+import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
 
 const orderCustomerServices = new OrderCustomerServices();
 const ratingServices = new RatingServices();
@@ -10,6 +11,7 @@ export class OrderCustomerController {
     public async createOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { userId, orderDetail, bakeryId } = req.body
+
             if (( !userId || !orderDetail || !bakeryId )) {
                 res.status(400)
                 throw new Error('All fields must be filled')
@@ -19,7 +21,11 @@ export class OrderCustomerController {
                 orderDetail,
                 bakeryId
             });
-            res.status(201).json(order);
+
+            res.status(200).json({
+                status: 200,
+                data: order
+            });
         } catch (error) {
             console.log("[src][controllers][OrderCustomerController][createOrder] ", error);
             next(error);
@@ -48,14 +54,27 @@ export class OrderCustomerController {
                     const averageRating = prevRating.length > 0 ? totalRatings / prevRating.length : 0;
                     const reviewCount = prevRating.filter((r) => r.review !== '').length;
 
+                    const updatedOrderDetails = order.orderDetail.map((detail) => {
+                        const todayPrice = getTodayPrice(detail.product);
+                        return {
+                            ...detail,
+                            product: {
+                                ...detail.product,
+                                todayPrice
+                            },
+                            totalDetailPrice: detail.productQuantity * todayPrice.toNumber(),
+                            discountPercentage: calculateDiscountPercentage(detail.product.productPrice, todayPrice),
+                        }
+                    });
+
                     const totalOrderQuantity = order.orderDetail.reduce(
                         (sum, detail) => sum + detail.productQuantity, 0
                     )
                     const totalOrderPrice = order.orderDetail.reduce(
-                        (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(), 0
+                        (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
                     )
 
-                    return { ...order, isRated, prevRating: { averageRating, reviewCount }, totalOrderQuantity, totalOrderPrice };
+                    return { ...order, orderDetail: updatedOrderDetails, isRated, prevRating: { averageRating, reviewCount }, totalOrderQuantity, totalOrderPrice };
                 })
             )
 
@@ -96,6 +115,26 @@ export class OrderCustomerController {
             });
         } catch (error) {
             console.log("[src][controllers][OrderCustomerController][getOrderDetailById] ", error);
+            next(error);
+        }
+    }
+
+    public async cancelOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { orderId } = req.body;
+            const order = await orderCustomerServices.cancelOrder(orderId);
+    
+            if (!order) {
+                res.status(404).json({ message: "Order not found" });
+                return;
+            }
+    
+            res.status(200).json({
+                status: 200,
+                data: order,
+            });
+        } catch (error) {
+            console.log("[src][controllers][OrderCustomerController][cancelOrder] ", error);
             next(error);
         }
     }

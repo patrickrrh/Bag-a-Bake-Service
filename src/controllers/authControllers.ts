@@ -71,7 +71,10 @@ export class AuthController {
                 userPhoneNumber: req.body.userPhoneNumber,
                 email: req.body.email,
                 password: req.body.password,
-                regionId: req.body.regionId,
+                address: req.body.address,
+                latitude: req.body.latitude,
+                longitude: req.body.longitude,
+                pushToken: req.body.pushToken
             };
 
             const checkExistingUser = await userServices.findUserByEmail(userData.email);
@@ -90,13 +93,14 @@ export class AuthController {
                     bakeryPhoneNumber: req.body.bakeryPhoneNumber,
                     openingTime: req.body.openingTime,
                     closingTime: req.body.closingTime,
-                    regionId: req.body.regionId,
+                    bakeryAddress: req.body.bakeryAddress,
+                    bakeryLatitude: req.body.bakeryLatitude,
+                    bakeryLongitude: req.body.bakeryLongitude
                 };
 
                 await bakeryServices.createBakery({
                     ...bakeryData,
                     userId: newUser.userId,
-                    regionId: req.body.bakeryRegionId,
                 })
             }
 
@@ -164,7 +168,10 @@ export class AuthController {
             const { accessToken, refreshToken: newRefreshToken } = generateTokens(getUser.userId, jti);
             await authServices.addRefreshTokenToWhitelist({ jti, refreshToken: newRefreshToken, userId: getUser.userId });
 
-            res.status(200).json({ accessToken, refreshToken: newRefreshToken });
+            res.status(200).json({
+                status: 200,
+                data: { accessToken, refreshToken: newRefreshToken }
+            });
         } catch (error) {
             console.log("[src][controllers][AuthController][refreshAuthentication] ", error);
             next(error);
@@ -185,10 +192,10 @@ export class AuthController {
 
             if (!findUser) {
                 console.log("[src][controllers][AuthController][resetPassword] User not found");
-                res.status(404).json({ 
+                res.status(404).json({
                     status: 404,
                     error: 'Email tidak ditemukan'
-                 });
+                });
                 return;
             }
 
@@ -200,16 +207,16 @@ export class AuthController {
 
             if (info) {
                 console.log("[src][controllers][AuthController][resetPassword] Email sent successfully");
-                res.status(200).json({ 
+                res.status(200).json({
                     status: 200,
                     message: 'Kode OTP berhasil dikirim, silakan cek email Anda'
-                 });
+                });
             } else {
                 console.log("[src][controllers][AuthController][resetPassword] Failed to send email");
-                res.status(500).json({ 
+                res.status(500).json({
                     status: 500,
                     error: 'Gagal mengirim email'
-                 });
+                });
             }
         } catch (error) {
             console.log("[src][controllers][AuthController][resetPassword] ", error);
@@ -234,10 +241,10 @@ export class AuthController {
             console.log("otp disini: ", storedOTP);
             if (!storedOTP) {
                 console.log("[src][controllers][AuthController][verifyOTP] OTP not found");
-                res.status(404).json({ 
+                res.status(404).json({
                     status: 404,
                     error: 'Kode OTP tidak ditemukan'
-                 });
+                });
                 return false;
             }
 
@@ -245,27 +252,27 @@ export class AuthController {
             if (Date.now() > expiresAt) {
                 delete otpStore[email];
                 console.log("[src][controllers][AuthController][verifyOTP] OTP has expired");
-                res.status(400).json({ 
+                res.status(400).json({
                     status: 400,
                     error: 'Kode OTP tidak valid, silakan kirim ulang'
-                 });
+                });
                 return false;
             }
 
             if (inputOTP === otp) {
                 delete otpStore[email];
                 console.log("[src][controllers][AuthController][verifyOTP] OTP is valid");
-                res.status(200).json({ 
+                res.status(200).json({
                     status: 200,
                     message: 'OTP is valid'
-                 });
+                });
                 return true;
             } else {
                 console.log("[src][controllers][AuthController][verifyOTP] Invalid OTP");
-                res.status(400).json({ 
+                res.status(400).json({
                     status: 400,
                     error: 'Kode OTP tidak valid'
-                 });
+                });
                 return false;
             }
         } catch (error) {
@@ -281,7 +288,7 @@ export class AuthController {
 
             if (!email || !password) {
                 console.log("[src][controllers][AuthController][changePassword] Missing email or password");
-                res.status(400).json({ 
+                res.status(400).json({
                     status: 400,
                     error: 'Missing email or password'
                 });
@@ -292,21 +299,21 @@ export class AuthController {
 
             if (!findUser) {
                 console.log("[src][controllers][AuthController][changePassword] User not found");
-                res.status(404).json({ 
+                res.status(404).json({
                     status: 404,
                     error: 'Email tidak ditemukan'
-                 });
+                });
                 return;
             }
 
-            await authServices.revokeTokens(findUser.userId);
+            // await authServices.revokeTokens(findUser.userId);
 
             await userServices.updateUserPassword(email, password);
-            console.log("[src][controllers][AuthController][changePassword] Password changed successfully");
+
             res.status(200).json({
                 status: 200,
                 message: 'Password berhasil diubah'
-            })            
+            })
         } catch (error) {
             console.log("[src][controllers][AuthController][changePassword] ", error);
             next(error);
@@ -316,19 +323,33 @@ export class AuthController {
     public async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { userId, ...updateData } = req.body;
-    
+
             const updatedUser = await userServices.updateUserById(parseInt(userId), updateData);
-    
+
             if (!updatedUser) {
                 console.log("[src][controllers][AuthController][updateUser] User not found");
                 res.status(404).json({ error: 'User not found' });
                 return;
             }
-    
+
             console.log("[src][controllers][AuthController][updateUser] User updated successfully");
             res.status(200).json({ message: 'User updated successfully', user: updatedUser });
         } catch (error) {
             console.log("[src][controllers][AuthController][updateUser] ", error);
+            next(error);
+        }
+    }
+
+    public async revokeTokens(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { userId } = req.body;
+
+            await authServices.revokeTokens(userId);
+
+            console.log("[src][controllers][AuthController][revokeTokens] Tokens revoked successfully");
+            res.status(200).json({ status: 200,message: 'Tokens revoked successfully' });
+        } catch (error) {
+            console.log("[src][controllers][AuthController][revokeTokens] ", error);
             next(error);
         }
     }

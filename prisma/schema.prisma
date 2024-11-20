@@ -28,8 +28,10 @@ model User {
   userPhoneNumber String?
   email String @unique
   password String
-  regionId Int?
-  regionUser Region? @relation(fields: [regionId], references: [regionId])
+  address String?
+  latitude Float?
+  longitude Float?
+  pushToken String?
   bakery Bakery?
   order Order[]
   signUpDate DateTime @default(now())
@@ -47,8 +49,9 @@ model Bakery {
   bakeryPhoneNumber String
   openingTime String
   closingTime String
-  regionId Int
-  regionBakery Region @relation(fields: [regionId], references: [regionId])
+  bakeryAddress String
+  bakeryLatitude Float
+  bakeryLongitude Float
   product Product[]
   favorite Favorite[]
   order Order[]
@@ -124,13 +127,6 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [userId])
   revoked Boolean @default(false)
   createdDate DateTime @default(now())
-}
-
-model Region {
-  regionId Int @id @default(autoincrement())
-  regionName String
-  user User[]
-  bakery Bakery[]
 }
 
 model Rating {

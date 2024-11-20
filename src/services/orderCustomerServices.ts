@@ -30,7 +30,8 @@ export class OrderCustomerServices {
                             productQuantity: detail.productQuantity,
                         }))
                     },
-                    bakeryId: order.bakeryId
+                    bakeryId: order.bakeryId,
+                    orderStatus: 1
                 },
                 include: {
                     orderDetail: true,
@@ -51,10 +52,14 @@ export class OrderCustomerServices {
                 include: {
                     orderDetail: {
                         include: {
-                            product: true,
+                            product: {
+                                include: {
+                                    discount: true
+                                }
+                            },
                         },
                     },
-                    bakery: true,
+                    bakery: true
                 },
             });
 
@@ -81,5 +86,16 @@ export class OrderCustomerServices {
         } catch (err) {
             throw new Error("Failed to retrieve order details by ID");
         }
-    }    
+    }
+    
+    public async cancelOrder(orderId: number): Promise<Order | null> {
+        try {
+            return await databaseService.getClient().order.update({
+                where: { orderId },
+                data: { orderStatus: 4 },
+            });
+        } catch (err) {
+            throw new Error("Failed to cancel order");
+        }
+    }
 }
