@@ -86,5 +86,16 @@ export class OrderCustomerServices {
         } catch (err) {
             throw new Error("Failed to retrieve order details by ID");
         }
-    }    
+    }
+    
+    public async cancelOrder(orderId: number): Promise<Order | null> {
+        try {
+            return await databaseService.getClient().order.update({
+                where: { orderId },
+                data: { orderStatus: 4 },
+            });
+        } catch (err) {
+            throw new Error("Failed to cancel order");
+        }
+    }
 }
