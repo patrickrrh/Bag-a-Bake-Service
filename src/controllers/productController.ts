@@ -5,11 +5,30 @@ import { calculateDiscountPercentage, getTodayPrice } from "../utilities/product
 import { RatingServices } from "../services/ratingServices";
 import getDistance from "geolib/es/getPreciseDistance";
 import { getPreciseDistance } from "geolib";
+import cron from "node-cron";
 
 const productServices = new ProductServices();
 const ratingServices = new RatingServices();
 
 export class ProductController {
+  constructor() {
+    this.scheduleDeactivateExpiredProducts();
+  }
+
+  private scheduleDeactivateExpiredProducts() {
+    cron.schedule("0 0 * * *", async () => {
+      try {
+        console.log("Running Expired Product Deactivation (CRON)");
+        await productServices.deactivateExpiredProducts();
+      } catch (error) {
+        console.error(
+          "[ProductController][scheduleDeactivateExpiredProducts] Error:",
+          error
+        );
+      }
+    });
+  }
+
   public async createProduct(
     req: Request,
     res: Response,
@@ -101,7 +120,7 @@ export class ProductController {
     try {
       const { productId } = req.body;
       const productData: CreateProductInput = req.body;
-
+      console.log(productData);
       if (
         !productId ||
         !productData.productName ||
@@ -113,8 +132,6 @@ export class ProductController {
         !productData.bakeryId ||
         !productData.categoryId
       ) {
-        console.log(productId);
-        console.log(productData);
         console.log(
           "[src][controllers][ProductController][updateProductById] Missing required fields"
         );
