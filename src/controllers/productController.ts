@@ -1,10 +1,29 @@
 import { NextFunction, Request, Response } from "express";
 import { ProductServices } from "../services/productServices";
 import { CreateProductInput } from "../services/productServices";
+import cron from "node-cron";
 
 const productServices = new ProductServices();
 
 export class ProductController {
+  constructor() {
+    this.scheduleDeactivateExpiredProducts();
+  }
+
+  private scheduleDeactivateExpiredProducts() {
+    cron.schedule("0 0 * * *", async () => {
+      try {
+        console.log("Running Expired Product Deactivation (CRON)");
+        await productServices.deactivateExpiredProducts();
+      } catch (error) {
+        console.error(
+          "[ProductController][scheduleDeactivateExpiredProducts] Error:",
+          error
+        );
+      }
+    });
+  }
+
   public async createProduct(
     req: Request,
     res: Response,
@@ -91,7 +110,7 @@ export class ProductController {
     try {
       const { productId } = req.body;
       const productData: CreateProductInput = req.body;
-
+      console.log(productData);
       if (
         !productId ||
         !productData.productName ||
@@ -103,8 +122,6 @@ export class ProductController {
         !productData.bakeryId ||
         !productData.categoryId
       ) {
-        console.log(productId);
-        console.log(productData);
         console.log(
           "[src][controllers][ProductController][updateProductById] Missing required fields"
         );

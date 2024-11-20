@@ -1,4 +1,10 @@
-import { Category, ListDiscount, Product, Bakery, Prisma } from "@prisma/client";
+import {
+  Category,
+  ListDiscount,
+  Product,
+  Bakery,
+  Prisma,
+} from "@prisma/client";
 import databaseService from "../script";
 import { Decimal } from "@prisma/client/runtime/library";
 
@@ -12,13 +18,14 @@ export interface CreateProductInput {
   discount: ListDiscount[];
   bakeryId: number;
   categoryId: number;
+  isActive: number;
 }
 
 type ProductWithDiscount = Prisma.ProductGetPayload<{
   include: {
-      discount: any
-  }
-}>
+    discount: any;
+  };
+}>;
 
 export class ProductServices {
   public async createProduct(product: CreateProductInput): Promise<void> {
@@ -53,7 +60,9 @@ export class ProductServices {
     }
   }
 
-  public async findProductById(productId: number | string): Promise<Product | null> {
+  public async findProductById(
+    productId: number | string
+  ): Promise<Product | null> {
     const numericProductId = Number(productId);
 
     if (!numericProductId) {
@@ -75,7 +84,6 @@ export class ProductServices {
       throw new Error("Failed to find product");
     }
   }
-
 
   public async updateProductById(
     productId: number,
@@ -107,6 +115,7 @@ export class ProductServices {
           },
           bakeryId: product.bakeryId,
           categoryId: product.categoryId,
+          isActive: product.isActive,
         },
         include: {
           discount: true,
@@ -231,7 +240,10 @@ export class ProductServices {
         },
       });
     } catch (error) {
-      console.log("[src][services][ProductServices][findRecommendedProducts] ", error);
+      console.log(
+        "[src][services][ProductServices][findRecommendedProducts] ",
+        error
+      );
       throw new Error("Failed to find recommended products");
     }
   }
@@ -277,9 +289,9 @@ export class ProductServices {
               closingTime: true,
               bakeryId: true,
               // bakeryRating: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       if (product !== null) {
@@ -287,27 +299,59 @@ export class ProductServices {
       } else {
         return {};
       }
-
     } catch (error) {
-      console.log("[src][services][ProductServices][findBakeryByProductId]", error)
+      console.log(
+        "[src][services][ProductServices][findBakeryByProductId]",
+        error
+      );
       throw new Error("Failed to find bakery by product ID");
     }
   }
 
-  public async findProductsByBakeryId(bakeryId: number, isActive: number): Promise<ProductWithDiscount[]> {
+  public async findProductsByBakeryId(
+    bakeryId: number,
+    isActive: number
+  ): Promise<ProductWithDiscount[]> {
     try {
       return await databaseService.getClient().product.findMany({
-        where: { 
+        where: {
           bakeryId,
-          isActive
+          isActive,
         },
         include: {
           discount: true,
         },
       });
     } catch (error) {
-      console.log("[src][services][ProductServices][findProductsByBakeryId]", error);
+      console.log(
+        "[src][services][ProductServices][findProductsByBakeryId]",
+        error
+      );
       throw new Error("Failed to find products by bakery ID");
+    }
+  }
+
+  public async deactivateExpiredProducts(): Promise<void> {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      await databaseService.getClient().product.updateMany({
+        where: {
+          productExpirationDate: {
+            lte: new Date(today),
+          },
+          isActive: 1,
+        },
+        data: {
+          isActive: 2,
+        },
+      });
+      console.log("Expired products deactivated successfully.");
+    } catch (error) {
+      console.log(
+        "[ProductServices][deactivateExpiredProducts] Error: ",
+        error
+      );
+      throw new Error("Failed to deactivate expired products.");
     }
   }
 }
