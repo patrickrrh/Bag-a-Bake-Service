@@ -77,6 +77,8 @@ export class AuthController {
                 pushToken: req.body.pushToken
             };
 
+            console.log("user data", userData.pushToken)
+
             const checkExistingUser = await userServices.findUserByEmail(userData.email);
             if (checkExistingUser) {
                 return;

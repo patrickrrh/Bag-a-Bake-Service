@@ -2,9 +2,12 @@ import { NextFunction, Request, Response } from "express";
 import { OrderCustomerServices } from "../services/orderCustomerServices";
 import { RatingServices } from "../services/ratingServices";
 import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
+import { UserServices } from "../services/userServices";
+import { sendNotifications } from "../utilities/notificationHandler";
 
 const orderCustomerServices = new OrderCustomerServices();
 const ratingServices = new RatingServices();
+const userServices = new UserServices();
 
 export class OrderCustomerController {
 
@@ -21,6 +24,12 @@ export class OrderCustomerController {
                 orderDetail,
                 bakeryId
             });
+
+            const seller = await userServices.findSellerByBakeryId(bakeryId);
+
+            if (seller?.pushToken) {
+                await sendNotifications(seller.pushToken, 'Pesanan Baru', 'Anda memiliki pesanan baru');
+            }
 
             res.status(200).json({
                 status: 200,

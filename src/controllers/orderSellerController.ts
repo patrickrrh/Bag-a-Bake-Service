@@ -2,9 +2,12 @@ import { NextFunction, Request, Response } from "express";
 import { OrderSellerServices } from "../services/orderSellerServices";
 import { getTodayPrice } from "../utilities/productUtils";
 import { ProductServices } from "../services/productServices";
+import { UserServices } from "../services/userServices";
+import { sendNotifications } from "../utilities/notificationHandler";
 
 const orderSellerServices = new OrderSellerServices();
 const productServices = new ProductServices();
+const userServices = new UserServices();
 
 export class OrderSellerController {
     public async findLatestPendingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -153,6 +156,12 @@ export class OrderSellerController {
                         await productServices.updateProductStock(detail.productId, updatedProductStock);
                     })
                 )
+            }
+
+            const buyer = await userServices.findBuyerByOrderId(orderId);
+
+            if (buyer?.pushToken) {
+                await sendNotifications(buyer.pushToken, 'Status Pesanan', 'Silakan cek status pesanan Anda');
             }
 
             res.status(200).json({
