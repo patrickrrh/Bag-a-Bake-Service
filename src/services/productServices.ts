@@ -72,8 +72,8 @@ export class ProductServices {
     }
   }
 
-  public async findProductById(productId: number): Promise<Product | null> {
-
+  public async findProductById(parameterProductId: number): Promise<Product | null> {
+    const productId = Number(parameterProductId);
     try {
       return await databaseService.getClient().product.findUnique({
         where: {
