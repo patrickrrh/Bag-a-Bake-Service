@@ -97,4 +97,39 @@ export class UserServices {
             throw error;
         }
     }
+    public async findSellerByBakeryId(bakeryId: number): Promise<User | null> {
+        try {
+            const bakery = await databaseService.getClient().bakery.findUnique({
+                where: {
+                    bakeryId
+                },
+                include: {
+                    user: true,
+                }
+            });
+    
+            return bakery ? bakery.user : null;
+        } catch (error) {
+            console.log("[src][services][UserServices][findSellerByBakeryId]", error);
+            throw new Error("Failed to find user");
+        }
+    }
+
+    public async findBuyerByOrderId(orderId: number): Promise<User | null> {
+        try {
+            const order = await databaseService.getClient().order.findUnique({
+                where: {
+                    orderId
+                },
+                include: {
+                    user: true,
+                }
+            });
+    
+            return order ? order.user : null;
+        } catch (error) {
+            console.log("[src][services][UserServices][findBuyerByOrderId]", error);
+            throw new Error("Failed to find user");
+        }
+    }
 }
