@@ -147,4 +147,19 @@ export class OrderCustomerController {
             next(error);
         }
     }
+
+    public async submitProofOfPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { orderId, proofOfPayment } = req.body;
+            await orderCustomerServices.submitProofOfPayment(orderId, proofOfPayment);
+    
+            res.status(200).json({
+                status: 200,
+                message: "Proof of payment submitted successfully",
+            });
+        } catch (error) {
+            console.log("[src][controllers][OrderCustomerController][submitProofOfPayment] ", error);
+            next(error);
+        }
+    }
 }

@@ -98,4 +98,15 @@ export class OrderCustomerServices {
             throw new Error("Failed to cancel order");
         }
     }
+
+    public async submitProofOfPayment(orderId: number, proofOfPayment: string): Promise<void> {
+        try {
+            await databaseService.getClient().order.update({
+                where: { orderId },
+                data: { proofOfPayment },
+            })
+        } catch (error) {
+            throw new Error("Failed to submit proof of payment");
+        }
+    }
 }
