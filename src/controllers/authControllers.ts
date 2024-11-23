@@ -10,10 +10,12 @@ import { User } from "@prisma/client";
 import databaseService from "../script";
 import { sendMail } from "../config/mailer";
 import { generateMailContent, generateOTP, otpStore } from "../utilities/otpHandler";
+import { CreatePaymentInput, PaymentServices } from "../services/paymentServices";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
 const bakeryServices = new BakeryServices();
+const paymentServices = new PaymentServices();
 
 export class AuthController {
 
@@ -77,8 +79,6 @@ export class AuthController {
                 pushToken: req.body.pushToken
             };
 
-            console.log("user data", userData.pushToken)
-
             const checkExistingUser = await userServices.findUserByEmail(userData.email);
             if (checkExistingUser) {
                 return;
@@ -100,10 +100,19 @@ export class AuthController {
                     bakeryLongitude: req.body.bakeryLongitude
                 };
 
-                await bakeryServices.createBakery({
+                const newBakery = await bakeryServices.createBakery({
                     ...bakeryData,
                     userId: newUser.userId,
                 })
+
+                const paymentDataArray: CreatePaymentInput[] = req.body.paymentMethods.map((payment: any) => ({
+                    bakeryId: newBakery.bakeryId,
+                    paymentMethod: payment.paymentMethod,
+                    paymentService: payment.paymentService,
+                    paymentDetail: payment.paymentDetail
+                }));
+
+                await paymentServices.insertPayment(paymentDataArray);
             }
 
             const user = await userServices.findUserById(newUser.userId);
