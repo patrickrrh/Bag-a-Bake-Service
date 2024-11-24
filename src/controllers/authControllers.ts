@@ -22,7 +22,7 @@ export class AuthController {
     public async isEmailRegistered(req: Request, res: Response, next: NextFunction): Promise<boolean> {
         try {
             const { email } = req.body
-            const user = await userServices.findUserByEmail(email);
+            const user = await userServices.findUserByEmail(email.toLowerCase());
             if (user) {
                 console.log("[src][controllers][AuthController][isEmailRegistered] Email is used");
                 res.status(400).json({ error: 'Email sudah terdaftar' });
@@ -41,7 +41,7 @@ export class AuthController {
     public async checkAccount(req: Request, res: Response, next: NextFunction): Promise<User | boolean> {
         try {
             const { email, password } = req.body
-            const user = await userServices.findUserByEmail(email);
+            const user = await userServices.findUserByEmail(email.toLowerCase());
             if (!user) {
                 console.log("[src][controllers][AuthController][checkAccount] Email is not registered");
                 res.status(404).json({ error: 'Email tidak terdaftar' });
@@ -71,7 +71,7 @@ export class AuthController {
                 userName: req.body.userName,
                 userImage: req.body.userImage,
                 userPhoneNumber: req.body.userPhoneNumber,
-                email: req.body.email,
+                email: req.body.email.toLowerCase(),
                 password: req.body.password,
                 address: req.body.address,
                 latitude: req.body.latitude,
@@ -81,7 +81,7 @@ export class AuthController {
 
             console.log("user data", userData.pushToken)
 
-            const checkExistingUser = await userServices.findUserByEmail(userData.email);
+            const checkExistingUser = await userServices.findUserByEmail(userData.email.toLowerCase());
             if (checkExistingUser) {
                 return;
             }
@@ -201,7 +201,7 @@ export class AuthController {
                 return;
             }
 
-            const findUser = await userServices.findUserByEmail(email);
+            const findUser = await userServices.findUserByEmail(email.toLowerCase());
 
             if (!findUser) {
                 console.log("[src][controllers][AuthController][resetPassword] User not found");
@@ -214,9 +214,9 @@ export class AuthController {
 
             const otp = generateOTP();
             const expiresAt = Date.now() + 60 * 1000;
-            otpStore[email] = { otp, expiresAt };
+            otpStore[email.toLowerCase()] = { otp, expiresAt };
 
-            const info = sendMail(email, "Permintaan Ubah Kata Sandi", generateMailContent(otp, findUser.userName));
+            const info = sendMail(email.toLowerCase(), "Permintaan Ubah Kata Sandi", generateMailContent(otp, findUser.userName));
 
             if (info) {
                 console.log("[src][controllers][AuthController][resetPassword] Email sent successfully");
@@ -250,7 +250,7 @@ export class AuthController {
                 return false;
             }
 
-            const storedOTP = otpStore[email];
+            const storedOTP = otpStore[email.toLowerCase()];
             console.log("otp disini: ", storedOTP);
             if (!storedOTP) {
                 console.log("[src][controllers][AuthController][verifyOTP] OTP not found");
@@ -308,7 +308,7 @@ export class AuthController {
                 return;
             }
 
-            const findUser = await userServices.findUserByEmail(email);
+            const findUser = await userServices.findUserByEmail(email.toLowerCase());
 
             if (!findUser) {
                 console.log("[src][controllers][AuthController][changePassword] User not found");
@@ -321,7 +321,7 @@ export class AuthController {
 
             // await authServices.revokeTokens(findUser.userId);
 
-            await userServices.updateUserPassword(email, password);
+            await userServices.updateUserPassword(email.toLowerCase(), password);
 
             res.status(200).json({
                 status: 200,
