@@ -60,7 +60,11 @@ export class UserServices {
                     userId
                  },
                  include: {
-                    bakery: true
+                    bakery: {
+                        include: {
+                            payment: true
+                        }
+                    }
                  }
             })
         } catch (error) {
