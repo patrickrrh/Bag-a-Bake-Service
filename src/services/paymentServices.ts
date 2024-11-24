@@ -41,23 +41,19 @@ export class PaymentServices {
   public async updatePayments(payments: CreatePaymentInput[]): Promise<void> {
     console.log("PAYMENT", payments);
     try {
-      // Ensure payments array is not empty
       if (payments.length === 0) {
         throw new Error("No payments provided for update");
       }
 
-      const bakeryId = payments[0].bakeryId; // Assume all payments have the same bakeryId
+      const bakeryId = payments[0].bakeryId;
 
-      // Begin a transaction
       await databaseService.getClient().$transaction(async (prisma) => {
-        // Delete all payments for the given bakeryId
         await prisma.payment.deleteMany({
           where: {
             bakeryId,
           },
         });
 
-        // Insert all new payments
         await prisma.payment.createMany({
           data: payments.map((payment) => ({
             bakeryId: payment.bakeryId,
