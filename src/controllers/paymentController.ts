@@ -8,6 +8,7 @@ export class PaymentController {
         try {
             const { bakeryId } = req.body; 
             const paymentInfo = await paymentServices.findPaymentInfoByBakeryId(bakeryId);
+            console.log("payment info", paymentInfo)
             res.status(200).json({
                 status: 200,
                 data: paymentInfo
