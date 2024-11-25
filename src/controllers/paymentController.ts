@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { PaymentServices } from "../services/paymentServices";
+import { PaymentServices, CreatePaymentInput } from "../services/paymentServices";
 
 const paymentServices = new PaymentServices();
 
@@ -18,4 +18,21 @@ export class PaymentController {
             next(error);
         }
     }
+
+    public async updatePayments(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const payments: CreatePaymentInput[] = req.body;
+            
+            await paymentServices.updatePayments(payments);
+            
+            console.log("[src][controllers][PaymentController][updatePayments] Payments updated successfully");
+            res.status(200).json({ message: 'Payments updated successfully' });
+            
+        } catch (error) {
+            console.log("[src][controllers][PaymentController][updatePayments] ", error);
+            next(error);
+        }
+    }
+    
+  
 }

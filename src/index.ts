@@ -32,7 +32,7 @@ apiRouter.use(bakeryRoutes);
 apiRouter.use(favoriteRoutes);
 apiRouter.use(orderCustomerRoutes);
 apiRouter.use(orderSellerRoutes);
-apiRouter.use(ratingRoutes)
+apiRouter.use(ratingRoutes);
 apiRouter.use(paymentRoutes);
 
 app.use('/api', apiRouter);
