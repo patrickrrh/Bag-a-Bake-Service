@@ -95,7 +95,7 @@ export class OrderSellerController {
             let { orderStatus, bakeryId } = req.body
 
             if (!Array.isArray(orderStatus)) {
-                orderStatus = orderStatus === 3 ? [3, 4] : [orderStatus];
+                orderStatus = orderStatus === 4 ? [4, 5] : [orderStatus];
             }
 
             const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus, bakeryId);

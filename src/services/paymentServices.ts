@@ -25,6 +25,9 @@ export class PaymentServices {
             return await databaseService.getClient().payment.findMany({
                 where: {
                     bakeryId
+                },
+                orderBy: {
+                    paymentMethod: "desc"
                 }
             })
         } catch (error) {

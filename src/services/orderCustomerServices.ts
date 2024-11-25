@@ -92,7 +92,7 @@ export class OrderCustomerServices {
         try {
             return await databaseService.getClient().order.update({
                 where: { orderId },
-                data: { orderStatus: 4 },
+                data: { orderStatus: 5 },
             });
         } catch (err) {
             throw new Error("Failed to cancel order");

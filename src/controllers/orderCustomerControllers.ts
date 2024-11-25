@@ -4,10 +4,12 @@ import { RatingServices } from "../services/ratingServices";
 import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
 import { UserServices } from "../services/userServices";
 import { sendNotifications } from "../utilities/notificationHandler";
+import { OrderSellerServices } from "../services/orderSellerServices";
 
 const orderCustomerServices = new OrderCustomerServices();
 const ratingServices = new RatingServices();
 const userServices = new UserServices();
+const orderSellerServices = new OrderSellerServices();
 
 export class OrderCustomerController {
 
@@ -152,6 +154,8 @@ export class OrderCustomerController {
         try {
             const { orderId, proofOfPayment } = req.body;
             await orderCustomerServices.submitProofOfPayment(orderId, proofOfPayment);
+
+            await orderSellerServices.actionOrder(orderId, 3);
     
             res.status(200).json({
                 status: 200,
