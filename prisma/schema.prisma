@@ -111,6 +111,7 @@ model Order {
   orderDetail OrderDetail[]
   rating Rating?
   proofOfPayment String?
+  paymentStartedAt DateTime?
 }
 
 model OrderDetail {

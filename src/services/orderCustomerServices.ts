@@ -42,12 +42,14 @@ export class OrderCustomerServices {
         }
     }
 
-    public async getOrderByStatus(orderStatus: number, userId: number): Promise<OrderWithDetails[]> {
+    public async getOrderByStatus(orderStatus: number[], userId: number): Promise<OrderWithDetails[]> {
         try {
             const orders = await databaseService.getClient().order.findMany({
                 where: { 
-                    orderStatus,
-                    userId
+                    userId,
+                    orderStatus: {
+                        in: orderStatus
+                    }
                 },
                 include: {
                     orderDetail: {
@@ -61,6 +63,9 @@ export class OrderCustomerServices {
                     },
                     bakery: true
                 },
+                orderBy: {
+                    orderId: "asc"
+                }
             });
 
             return orders;
@@ -77,7 +82,7 @@ export class OrderCustomerServices {
                 include: {
                     orderDetail: {
                         include: {
-                            product: true, // Include product to access productPrice
+                            product: true,
                         },
                     },
                 },
@@ -107,6 +112,31 @@ export class OrderCustomerServices {
             })
         } catch (error) {
             throw new Error("Failed to submit proof of payment");
+        }
+    }
+
+    public async findOnPaymentOrders(paymentDueAt: Date): Promise<Order[]> {
+        try {
+            return await databaseService.getClient().order.findMany({
+                where: {
+                    orderStatus: 2,
+                    paymentStartedAt: { lte: paymentDueAt },
+                    proofOfPayment: null
+                }
+            })
+        } catch (error) {
+            throw new Error("Failed to find on payment orders");
+        }
+    }
+
+    public async deactiveUnpaidOrders(orderId: number): Promise<void> {
+        try {
+            await databaseService.getClient().order.update({
+                where: { orderId },
+                data: { orderStatus: 5 },
+            })
+        } catch (error) {
+            throw new Error("Failed to deactive order");
         }
     }
 }

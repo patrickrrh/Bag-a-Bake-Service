@@ -24,4 +24,18 @@ export class RatingController {
             next(error);
         }
     }
+
+    public async findBakeryRatingWithUserDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { bakeryId } = req.body;
+            const ratings = await ratingServices.findBakeryRatingWithUserDetail(bakeryId);
+            res.status(200).json({
+                status: 200,
+                data: ratings
+            })
+        } catch (error) {
+            console.log("[src][controllers][RatingController][findBakeryRatingWithUserDetail] ", error);
+            next(error);
+        }
+    }
 }

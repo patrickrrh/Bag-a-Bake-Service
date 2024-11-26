@@ -5,13 +5,37 @@ import { calculateDiscountPercentage, getTodayPrice } from "../utilities/product
 import { UserServices } from "../services/userServices";
 import { sendNotifications } from "../utilities/notificationHandler";
 import { OrderSellerServices } from "../services/orderSellerServices";
+import cron from 'node-cron';
+import { ProductServices } from "../services/productServices";
 
 const orderCustomerServices = new OrderCustomerServices();
 const ratingServices = new RatingServices();
 const userServices = new UserServices();
-const orderSellerServices = new OrderSellerServices();
 
 export class OrderCustomerController {
+    constructor() {
+        this.scheduleDeactiveUnpaidOrders();
+    }
+
+    private scheduleDeactiveUnpaidOrders() {
+        cron.schedule("* * * * *", async () => {
+            try {
+                const paymentDueAt = new Date(Date.now() - 15 * 60 * 1000);
+
+                const orderToDeactive = await orderCustomerServices.findOnPaymentOrders(paymentDueAt);
+
+                if (orderToDeactive.length === 0) {
+                    return;
+                }
+
+                for (const order of orderToDeactive) {
+                    await orderCustomerServices.deactiveUnpaidOrders(order.orderId);
+                }
+            } catch (error) {
+                console.error("[src][controllers][OrderCustomerController][scheduleDeactiveUnpaidOrders] Error: ", error);
+            }
+        })
+    }
 
     public async createOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
@@ -45,7 +69,12 @@ export class OrderCustomerController {
 
     public async getOrderByStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderStatus, userId } = req.body
+            let { orderStatus, userId } = req.body
+
+            if (!Array.isArray(orderStatus)) {
+                orderStatus = orderStatus === 4 ? [4, 5] : [orderStatus];
+            }
+
             const orders = await orderCustomerServices.getOrderByStatus(orderStatus, userId);
 
             if (orders.length === 0) {
@@ -139,6 +168,12 @@ export class OrderCustomerController {
                 res.status(404).json({ message: "Order not found" });
                 return;
             }
+
+            const seller = await userServices.findSellerByBakeryId(orderId);
+
+            if (seller?.pushToken) {
+                await sendNotifications(seller.pushToken, 'Pesanan Dibatalkan', 'Maaf, pembeli telah membatalkan pesanan');
+            }
     
             res.status(200).json({
                 status: 200,
@@ -154,8 +189,6 @@ export class OrderCustomerController {
         try {
             const { orderId, proofOfPayment } = req.body;
             await orderCustomerServices.submitProofOfPayment(orderId, proofOfPayment);
-
-            await orderSellerServices.actionOrder(orderId, 3);
     
             res.status(200).json({
                 status: 200,

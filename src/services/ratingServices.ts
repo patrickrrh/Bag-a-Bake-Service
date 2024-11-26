@@ -48,4 +48,37 @@ export class RatingServices {
             throw new Error("Failed to find rating by bakery")
         }
     }
+
+    public async findBakeryRatingWithUserDetail(bakeryId: number): Promise<any[]> {
+        try {
+            return await databaseService.getClient().rating.findMany({
+                where: {
+                    order: {
+                        bakeryId,
+                    },
+                },
+                select: {
+                    ratingId: true,
+                    orderId: true,
+                    rating: true,
+                    review: true,
+                    createdDate: true,
+                    order: {
+                        select: {
+                            user: {
+                                select: {
+                                    userId: true,
+                                    userName: true,
+                                    userImage: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        } catch (error) {
+            console.log("[src][services][RatingServices][findBakeryRatingWithUserDetail] ", error);
+            throw new Error("Failed to find bakery rating with user detail");
+        }
+    }    
 }
