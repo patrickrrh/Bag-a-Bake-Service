@@ -27,11 +27,17 @@ export class RatingController {
 
     public async findBakeryRatingWithUserDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { bakeryId } = req.body;
+            const { bakeryId, star } = req.body;
             const ratings = await ratingServices.findBakeryRatingWithUserDetail(bakeryId);
+            const filteredRatings = star ? ratings.filter(r => r.rating == star) : ratings;
+
+            const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
+            const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
+            const reviewCount = ratings.filter((r) => r.review !== '').length;
+
             res.status(200).json({
                 status: 200,
-                data: ratings
+                data: filteredRatings, averageRating, reviewCount
             })
         } catch (error) {
             console.log("[src][controllers][RatingController][findBakeryRatingWithUserDetail] ", error);

@@ -75,6 +75,9 @@ export class RatingServices {
                         },
                     },
                 },
+                orderBy: {
+                    createdDate: 'desc',
+                },
             });
         } catch (error) {
             console.log("[src][services][RatingServices][findBakeryRatingWithUserDetail] ", error);
