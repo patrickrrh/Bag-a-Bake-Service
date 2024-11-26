@@ -136,4 +136,26 @@ export class UserServices {
             throw new Error("Failed to find user");
         }
     }
+
+    public async findSellerByOrderId(orderId: number): Promise<User | null> {
+        try {
+            const order = await databaseService.getClient().order.findUnique({
+                where: {
+                    orderId
+                },
+                include: {
+                    bakery: {
+                        include: {
+                            user: true,
+                        }
+                    }
+                }
+            });
+    
+            return order ? order.bakery.user : null;
+        } catch (error) {
+            console.log("[src][services][UserServices][findSellerByOrderId]", error);
+            throw new Error("Failed to find user");
+        }
+    }
 }

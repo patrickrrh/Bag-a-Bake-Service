@@ -39,11 +39,37 @@ export class OrderSellerServices {
         }
     }
 
-    public async findLatestOngoingOrder(bakeryId: number): Promise<OrderWithDetails | null> {
+    public async findLatestPaymentOrder(bakeryId: number): Promise<OrderWithDetails | null> {
         try {
             return await databaseService.getClient().order.findFirst({
                 where: {
                     orderStatus: 2,
+                    bakeryId
+                },
+                include: {
+                    user: true,
+                    orderDetail: {
+                        include: {
+                            product: {
+                                include: {
+                                    discount: true
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][OrderSellerServices][findLatestPaymentOrder] ", error)
+            throw new Error("Failed to get on payment order")
+        }
+    }
+
+    public async findLatestOngoingOrder(bakeryId: number): Promise<OrderWithDetails | null> {
+        try {
+            return await databaseService.getClient().order.findFirst({
+                where: {
+                    orderStatus: 3,
                     bakeryId
                 },
                 include: {
@@ -79,11 +105,25 @@ export class OrderSellerServices {
         }
     }
 
-    public async countAllOngoingOrder(bakeryId: number): Promise<number> {
+    public async countAllOnPaymentOrder(bakeryId: number): Promise<number> {
         try {
             return await databaseService.getClient().order.count({
                 where: {
                     orderStatus: 2,
+                    bakeryId
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][OrderSellerServices][countAllOnPaymentOrder] ", error)
+            throw new Error("Failed to count all on payment order")
+        }
+    }
+
+    public async countAllOngoingOrder(bakeryId: number): Promise<number> {
+        try {
+            return await databaseService.getClient().order.count({
+                where: {
+                    orderStatus: 3,
                     bakeryId
                 }
             })
@@ -113,6 +153,9 @@ export class OrderSellerServices {
                             }
                         }
                     }
+                },
+                orderBy: {
+                    orderId: "asc"
                 }
             })
         } catch (error) {
@@ -121,14 +164,15 @@ export class OrderSellerServices {
         }
     }
 
-    public async actionOrder(orderId: number, orderStatus: number): Promise<void> {
+    public async actionOrder(orderId: number, orderStatus: number, paymentStartedAt?: Date): Promise<void> {
         try {
             await databaseService.getClient().order.update({
                 where: {
                     orderId
                 },
                 data: {
-                    orderStatus
+                    orderStatus,
+                    paymentStartedAt
                 }
             })
         } catch (error) {

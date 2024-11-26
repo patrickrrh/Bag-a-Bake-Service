@@ -1,13 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import { OrderSellerServices } from "../services/orderSellerServices";
-import { getTodayPrice } from "../utilities/productUtils";
+import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
 import { ProductServices } from "../services/productServices";
 import { UserServices } from "../services/userServices";
 import { sendNotifications } from "../utilities/notificationHandler";
+import { OrderCustomerServices } from "../services/orderCustomerServices";
 
 const orderSellerServices = new OrderSellerServices();
 const productServices = new ProductServices();
 const userServices = new UserServices();
+const orderCustomerServices = new OrderCustomerServices();
 
 export class OrderSellerController {
     public async findLatestPendingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -31,6 +33,31 @@ export class OrderSellerController {
             })
         } catch (error) {
             console.log("[src][controllers][OrderSellerController][findLatestPendingOrder] ", error)
+            next(error)
+        }
+    }
+
+    public async findLatestPaymentOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { bakeryId } = req.body
+
+            const latestPaymentOrder = await orderSellerServices.findLatestPaymentOrder(bakeryId);
+
+            const updatedOrderDetails = latestPaymentOrder?.orderDetail.map((detail) => ({
+                ...detail,
+                totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
+            }));
+
+            const totalOrderPrice = latestPaymentOrder?.orderDetail.reduce(
+                (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
+            )
+
+            res.status(200).json({
+                status: 200,
+                data: { ...latestPaymentOrder, orderDetail: updatedOrderDetails, totalOrderPrice }
+            })
+        } catch (error) {
+            console.log("[src][controllers][OrderSellerController][findLatestPaymentOrder] ", error)
             next(error)
         }
     }
@@ -75,6 +102,21 @@ export class OrderSellerController {
         }
     }
 
+    public async countAllOnPaymentOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { bakeryId } = req.body
+
+            const countAllOnPaymentOrder = await orderSellerServices.countAllOnPaymentOrder(bakeryId);
+            res.status(200).json({
+                status: 200,
+                data: countAllOnPaymentOrder
+            })
+        } catch (error) {
+            console.log("[src][controllers][OrderSellerController][countAllOnPaymentOrder] ", error)
+            next(error)
+        }
+    }
+
     public async countAllOngoingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { bakeryId } = req.body
@@ -105,6 +147,7 @@ export class OrderSellerController {
                     const updatedOrderDetails = order.orderDetail.map((detail) => ({
                         ...detail,
                         totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
+                        discountPercentage: calculateDiscountPercentage(detail.product.productPrice, getTodayPrice(detail.product)),
                     }));
 
                     const totalOrderPrice = order.orderDetail.reduce(
@@ -127,7 +170,7 @@ export class OrderSellerController {
 
     public async actionOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderId, orderStatus } = req.body
+            const { orderId, orderStatus, paymentStartedAt } = req.body
 
             if (!orderId || !orderStatus) {
                 res.status(400).json({
@@ -136,7 +179,7 @@ export class OrderSellerController {
                 })
             }
 
-            await orderSellerServices.actionOrder(orderId, orderStatus);
+            await orderSellerServices.actionOrder(orderId, orderStatus, paymentStartedAt);
 
             if (orderStatus === 2) {
                 const orderDetails = await orderSellerServices.findOrderDetailByOrderId(orderId);
@@ -161,7 +204,13 @@ export class OrderSellerController {
             const buyer = await userServices.findBuyerByOrderId(orderId);
 
             if (buyer?.pushToken) {
-                await sendNotifications(buyer.pushToken, 'Status Pesanan', 'Silakan cek status pesanan Anda');
+                if (orderStatus === 2) {
+                    await sendNotifications(buyer.pushToken, 'Pesanan Diterima', 'Silakan selesaikan pembayaran sebelum waktu yang ditentukan');
+                } else if (orderStatus === 5) {
+                    await sendNotifications(buyer.pushToken, 'Pesanan Dibatalkan', 'Maaf, bakeri membatalkan pesanan Anda');
+                } else {
+                    await sendNotifications(buyer.pushToken, 'Status Pesanan', 'Silakan cek status pesanan Anda');
+                }
             }
 
             res.status(200).json({
@@ -170,6 +219,44 @@ export class OrderSellerController {
             })
         } catch (error) {
             console.log("[src][controllers][OrderSellerController][actionOrder] ", error)
+            next(error)
+        }
+    }
+
+    public async cancelOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { orderId } = req.body
+
+            await orderSellerServices.actionOrder(orderId, 5);
+
+
+            const orderDetails = await orderCustomerServices.getOrderDetailById(orderId);
+
+            if (!orderDetails) {
+                res.status(404).json({ message: "Order details not found" });
+                return;
+            }
+
+            await Promise.all(
+                orderDetails.orderDetail.map(async (detail) => {
+                    const currentProduct = await productServices.findProductById(detail.productId);
+                    const updatedProductStock = Number(currentProduct?.productStock) + detail.productQuantity;
+                    await productServices.updateProductStock(detail.productId, updatedProductStock);
+                })
+            )
+
+            const buyer = await userServices.findBuyerByOrderId(orderId);
+
+            if (buyer?.pushToken) {
+                await sendNotifications(buyer.pushToken, 'Pesanan Dibatalkan', 'Maaf, bakeri membatalkan pesanan Anda');
+            }
+
+            res.status(200).json({
+                status: 200,
+                message: "Success"
+            })
+        } catch (error) {
+            console.log("[src][controllers][OrderSellerController][cancelOrder] ", error)
             next(error)
         }
     }
