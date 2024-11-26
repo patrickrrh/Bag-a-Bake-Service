@@ -181,7 +181,7 @@ export class OrderSellerServices {
         }
     }
 
-    public async findOrderDetailByOrderId(orderId: number): Promise<OrderDetail[]> {
+    public async findOrderDetailsByOrderId(orderId: number): Promise<OrderDetail[]> {
         try {
             return await databaseService.getClient().orderDetail.findMany({
                 where: {
@@ -191,6 +191,24 @@ export class OrderSellerServices {
         } catch (error) {
             console.log("[src][services][OrderSellerServices][findOrderDetailByOrderId] ", error)
             throw new Error("Failed to find order detail")
+        }
+    }
+
+    public async findOrderDetailByOrderId(orderId: number): Promise<OrderWithDetails | null> {
+        try {
+            const order = await databaseService.getClient().order.findUnique({
+                where: { orderId },
+                include: {
+                    orderDetail: {
+                        include: {
+                            product: true,
+                        },
+                    },
+                },
+            });
+            return order;
+        } catch (err) {
+            throw new Error("Failed to retrieve order details by ID");
         }
     }
 }

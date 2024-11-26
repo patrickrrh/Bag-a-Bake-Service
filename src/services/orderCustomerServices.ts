@@ -74,25 +74,6 @@ export class OrderCustomerServices {
         }
     }
     
-
-    public async getOrderDetailById(orderId: number): Promise<OrderWithDetails | null> {
-        try {
-            const order = await databaseService.getClient().order.findUnique({
-                where: { orderId },
-                include: {
-                    orderDetail: {
-                        include: {
-                            product: true,
-                        },
-                    },
-                },
-            });
-            return order;
-        } catch (err) {
-            throw new Error("Failed to retrieve order details by ID");
-        }
-    }
-    
     public async cancelOrder(orderId: number): Promise<Order | null> {
         try {
             return await databaseService.getClient().order.update({

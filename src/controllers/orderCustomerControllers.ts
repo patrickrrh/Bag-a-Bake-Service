@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { OrderCustomerServices } from "../services/orderCustomerServices";
 import { RatingServices } from "../services/ratingServices";
-import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
+import { calculateDiscountPercentage, getPriceOnOrderDate } from "../utilities/productUtils";
 import { UserServices } from "../services/userServices";
 import { sendNotifications } from "../utilities/notificationHandler";
 import { OrderSellerServices } from "../services/orderSellerServices";
@@ -95,15 +95,15 @@ export class OrderCustomerController {
                     const reviewCount = prevRating.filter((r) => r.review !== '').length;
 
                     const updatedOrderDetails = order.orderDetail.map((detail) => {
-                        const todayPrice = getTodayPrice(detail.product);
+                        const orderDatePrice = getPriceOnOrderDate(detail.product, order.orderDate);
                         return {
                             ...detail,
                             product: {
                                 ...detail.product,
-                                todayPrice
+                                orderDatePrice
                             },
-                            totalDetailPrice: detail.productQuantity * todayPrice.toNumber(),
-                            discountPercentage: calculateDiscountPercentage(detail.product.productPrice, todayPrice),
+                            totalDetailPrice: detail.productQuantity * orderDatePrice.toNumber(),
+                            discountPercentage: calculateDiscountPercentage(detail.product.productPrice, orderDatePrice),
                         }
                     });
 
@@ -111,7 +111,7 @@ export class OrderCustomerController {
                         (sum, detail) => sum + detail.productQuantity, 0
                     )
                     const totalOrderPrice = order.orderDetail.reduce(
-                        (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
+                        (sum, detail) => sum + detail.productQuantity * getPriceOnOrderDate(detail.product, order.orderDate).toNumber(), 0
                     )
 
                     return { ...order, orderDetail: updatedOrderDetails, isRated, prevRating: { averageRating, reviewCount }, totalOrderQuantity, totalOrderPrice };
@@ -124,37 +124,6 @@ export class OrderCustomerController {
             });
         } catch (error) {
             console.log("[src][controllers][OrderCustomerController][getOrderByStatus] ", error);
-            next(error);
-        }
-    }
-
-    public async getOrderDetailById(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { orderId } = req.body;
-            const order = await orderCustomerServices.getOrderDetailById(orderId);
-    
-            if (!order) {
-                res.status(404).json({ message: "Order not found" });
-                return;
-            }
-    
-            // Calculate totalOrderPrice
-            const totalOrderPrice = order.orderDetail.reduce(
-                (sum, detail) => sum + detail.productQuantity * detail.product.productPrice.toNumber(),
-                0
-            );
-    
-            const result = {
-                ...order,
-                totalOrderPrice,
-            };
-    
-            res.status(200).json({
-                status: 200,
-                data: result,
-            });
-        } catch (error) {
-            console.log("[src][controllers][OrderCustomerController][getOrderDetailById] ", error);
             next(error);
         }
     }

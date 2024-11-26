@@ -136,46 +136,6 @@ export class ProductServices {
     }
   }
 
-  public async searchProductByKeyword(keyword: string): Promise<Product[]> {
-    try {
-      const normalizedKeyword = keyword.trim().replace(/\s+/g, " ");
-      const keywordsArray = normalizedKeyword.split(" ");
-
-      return await databaseService.getClient().product.findMany({
-        where: {
-          OR: keywordsArray.map((word) => ({
-            OR: [
-              {
-                productName: {
-                  contains: word,
-                  mode: "insensitive",
-                },
-              },
-              {
-                productDescription: {
-                  contains: word,
-                  mode: "insensitive",
-                },
-              },
-            ],
-          })),
-          isActive: 1,
-        },
-        include: {
-          discount: true,
-          category: true,
-          bakery: true,
-        },
-      });
-    } catch (error) {
-      console.log(
-        "[src][services][ProductServices][searchProductByKeyword] ",
-        error
-      );
-      throw new Error("Failed to search for products");
-    }
-  }
-
   public async deleteProductById(productId: number): Promise<Product | null> {
     try {
       const existingProduct = await this.findProductById(productId);
@@ -202,35 +162,21 @@ export class ProductServices {
     }
   }
 
-  public async findProductsByCategory(
-    categoryName: string
-  ): Promise<Product[]> {
+  public async findRecommendedProducts(currentTime: string): Promise<ProductWithBakeryAndDiscount[]> {
     try {
       return await databaseService.getClient().product.findMany({
         where: {
-          category: {
-            categoryName: {
-              contains: categoryName,
+          bakery: {
+            openingTime: {
+              lte: currentTime
             },
+            closingTime: {
+              gte: currentTime
+            }
           },
+          isActive: 1,
+          productStock: { gt: 0 },
         },
-        include: {
-          discount: true,
-          category: true,
-        },
-      });
-    } catch (error) {
-      console.log(
-        "[src][services][ProductServices][findProductsByCategory] ",
-        error
-      );
-      throw new Error("Failed to find products by category");
-    }
-  }
-
-  public async findRecommendedProducts(): Promise<ProductWithBakeryAndDiscount[]> {
-    try {
-      return await databaseService.getClient().product.findMany({
         orderBy: {
           productStock: "asc",
         },
@@ -248,11 +194,21 @@ export class ProductServices {
     }
   }
 
-  public async findExpiringProducts(): Promise<ProductWithBakeryAndDiscount[]> {
+  public async findExpiringProducts(currentTime?: string): Promise<ProductWithBakeryAndDiscount[]> {
     try {
       return await databaseService.getClient().product.findMany({
         where: {
+          bakery: {
+            openingTime: {
+              lte: currentTime
+            },
+            closingTime: {
+              gte: currentTime
+            }
+          }
+          ,
           isActive: 1,
+          productStock: { gt: 0 },
         },
         orderBy: [
           {

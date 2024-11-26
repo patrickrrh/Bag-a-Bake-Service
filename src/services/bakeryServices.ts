@@ -36,9 +36,17 @@ export class BakeryServices {
         }
     }
 
-    public async findAllBakery(): Promise<Bakery[]> {
+    public async findAllBakery(currentTime?: string): Promise<Bakery[]> {
         try {
             return await databaseService.getClient().bakery.findMany({
+                where: {
+                    openingTime: {
+                        lte: currentTime
+                    },
+                    closingTime: {
+                        gte: currentTime
+                    }
+                },
                 include: {
                     favorite: true
                 }
@@ -57,6 +65,10 @@ export class BakeryServices {
                 },
                 include: {
                     product: {
+                        where: {
+                            isActive: 1,
+                            productStock: { gt: 0 }
+                        },
                         include: {
                             discount: true
                         }
@@ -70,13 +82,23 @@ export class BakeryServices {
         }
     }
 
-    public async findBakeryByCategory(categoryId: number[]): Promise<Bakery[] | []> {
+    public async findBakeryByCategory(categoryId: number[], currentTime?: string): Promise<Bakery[] | []> {
         try {
             const distinctBakeryIds = await databaseService.getClient().product.findMany({
                 where: {
                     categoryId: {
                         in: categoryId
-                    }
+                    },
+                    bakery: {
+                        openingTime: {
+                            lte: currentTime
+                        },
+                        closingTime: {
+                            gte: currentTime
+                        }
+                    },
+                    isActive: 1,
+                    productStock: { gt: 0 },
                 },
                 select: {
                     bakeryId: true,
