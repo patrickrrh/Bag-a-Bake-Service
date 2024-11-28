@@ -21,7 +21,7 @@ export class BakeryController {
             const ratings = await ratingServices.findRatingByBakery(bakeryId);
 
             const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
-            const averageRating = ratings.length > 0 ? (totalRatings / ratings.length).toFixed(1) : '0.0'; 
+            const averageRating = ratings.length > 0 ? (totalRatings / ratings.length).toFixed(1) : '0.0';
             const reviewCount = ratings.filter((r) => r.review !== '').length;
 
             if (bakery?.product) {
@@ -113,17 +113,26 @@ export class BakeryController {
                 bakeries = await bakeryServices.findAllBakery(formattedTime);
             }
 
-            const updatedBakeries = bakeries.map((bakery) => {
+            const updatedBakeries = await Promise.all(bakeries.map(async (bakery) => {
                 const bakeryLocation = { latitude: bakery.bakeryLatitude, longitude: bakery.bakeryLongitude };
 
                 const distance = getPreciseDistance(userLocation, bakeryLocation, 0.01);
                 const distanceInKm = parseFloat((distance / 1000).toFixed(2));
 
+                const ratings = await ratingServices.findRatingByBakery(bakery.bakeryId);
+                const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
+                const averageRating = ratings.length > 0 ? (totalRatings / ratings.length).toFixed(1) : '0.0';
+                const reviewCount = ratings.filter((r) => r.review !== '').length;
+
                 return {
                     ...bakery,
-                    distanceInKm
+                    distanceInKm,
+                    rating: {
+                        averageRating,
+                        reviewCount,
+                    },
                 };
-            });
+            }));
 
             if (userLocationFilter) {
                 const top5NearestBakeries = updatedBakeries
