@@ -18,11 +18,30 @@ export class BakeryController {
 
             const bakery = await bakeryServices.findBakeryById(bakeryId);
 
+            if (!bakery) {
+                res.status(404).json({
+                    status: 404,
+                    message: 'Bakery not found',
+                });
+                return;
+            }
+
             const ratings = await ratingServices.findRatingByBakery(bakeryId);
 
             const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
             const averageRating = ratings.length > 0 ? (totalRatings / ratings.length).toFixed(1) : '0.0';
             const reviewCount = ratings.filter((r) => r.review !== '').length;
+
+            const currentTime = new Date();
+            const currentHour = currentTime.getHours().toString().padStart(2, '0');
+            const currentMinute = currentTime.getMinutes().toString().padStart(2, '0');
+            const formattedTime = `${currentHour}:${currentMinute}`;
+
+            const currentTimeInMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+            const openingTimeInMinutes = parseInt(bakery.openingTime.split(':')[0]) * 60 + parseInt(bakery.openingTime.split(':')[1]);
+            const closingTimeInMinutes = parseInt(bakery.closingTime.split(':')[0]) * 60 + parseInt(bakery.closingTime.split(':')[1]);
+
+            const isClosed = currentTimeInMinutes < openingTimeInMinutes || currentTimeInMinutes > closingTimeInMinutes;
 
             if (bakery?.product) {
                 bakery.product = bakery.product.map((product) => {
@@ -39,7 +58,7 @@ export class BakeryController {
 
             res.status(200).json({
                 status: 200,
-                data: { bakery, prevRating: { averageRating, reviewCount } }
+                data: { bakery, prevRating: { averageRating, reviewCount }, isClosed }
             });
         } catch (error) {
             console.log("[src][controllers][BakeryController][findBakeryById] ", error);
