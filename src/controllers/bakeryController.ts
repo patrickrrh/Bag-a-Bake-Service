@@ -75,14 +75,14 @@ export class BakeryController {
             let bakeries: Bakery[] | undefined;
 
             if (Array.isArray(categoryId) && categoryId.length > 0) {
-                const categoryBakeries = await bakeryServices.findBakeryByCategory(categoryId, formattedTime);
+                const categoryBakeries = await bakeryServices.findBakeryByCategory(categoryId);
                 bakeries = bakeries
                     ? bakeries.filter(bakery => categoryBakeries?.some(categoryBakery => categoryBakery.bakeryId === bakery.bakeryId)) :
                     categoryBakeries;
             }
 
             if (expiringProducts) {
-                const expiringProducts = await productServices.findExpiringProducts(formattedTime);
+                const expiringProducts = await productServices.findExpiringProducts();
 
                 if (!expiringProducts) {
                     console.log("[src][controllers][BakeryController][findBakeryByExpiringProducts] No expiring products");
@@ -110,12 +110,17 @@ export class BakeryController {
             }
 
             if (!bakeries) {
-                bakeries = await bakeryServices.findAllBakery(formattedTime);
+                bakeries = await bakeryServices.findAllBakery();
             }
 
             const updatedBakeries = await Promise.all(bakeries.map(async (bakery) => {
-                const bakeryLocation = { latitude: bakery.bakeryLatitude, longitude: bakery.bakeryLongitude };
+                const currentTimeInMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+                const openingTimeInMinutes = parseInt(bakery.openingTime.split(':')[0]) * 60 + parseInt(bakery.openingTime.split(':')[1]);
+                const closingTimeInMinutes = parseInt(bakery.closingTime.split(':')[0]) * 60 + parseInt(bakery.closingTime.split(':')[1]);
 
+                const isClosed = currentTimeInMinutes < openingTimeInMinutes || currentTimeInMinutes > closingTimeInMinutes;
+
+                const bakeryLocation = { latitude: bakery.bakeryLatitude, longitude: bakery.bakeryLongitude };
                 const distance = getPreciseDistance(userLocation, bakeryLocation, 0.01);
                 const distanceInKm = parseFloat((distance / 1000).toFixed(2));
 
@@ -126,6 +131,7 @@ export class BakeryController {
 
                 return {
                     ...bakery,
+                    isClosed,
                     distanceInKm,
                     rating: {
                         averageRating,
