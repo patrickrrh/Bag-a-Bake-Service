@@ -28,9 +28,11 @@ export class RatingController {
     public async findBakeryRatingWithUserDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { bakeryId, star } = req.body;
+            const filterStar = star === "all" ? null : star;
+
             const ratings = await ratingServices.findBakeryRatingWithUserDetail(bakeryId);
 
-            const filteredRatings = star ? ratings.filter(r => r.rating == star) : ratings;
+            const filteredRatings = filterStar ? ratings.filter(r => r.rating == star) : ratings;
 
             const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
             const averageRating = ratings.length > 0 ? (totalRatings / ratings.length).toFixed(1) : '0.0';
