@@ -51,7 +51,7 @@ export class AuthController {
             const checkPassword = await bycrpt.compare(password, user.password);
             if (!checkPassword) {
                 console.log("[src][controllers][AuthController][checkAccount] Password is incorrect");
-                res.status(400).json({ error: 'Password salah' });
+                res.status(400).json({ error: 'Kata sandi salah' });
                 return false;
             }
 
