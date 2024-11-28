@@ -172,44 +172,6 @@ export class ProductController {
     }
   }
 
-  public async searchProductByKeyword(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { keyword } = req.query;
-
-      if (!keyword || typeof keyword !== "string") {
-        console.log(
-          "[src][controllers][ProductController][searchProductByKeyword] Keyword is required"
-        );
-        res.status(400).send("Keyword is required");
-        return;
-      }
-
-      const foundProducts = await productServices.searchProductByKeyword(
-        keyword
-      );
-
-      if (foundProducts.length === 0) {
-        console.log(
-          "[src][controllers][ProductController][searchProductByKeyword] No products found"
-        );
-        res.status(404).send("No products found");
-        return;
-      }
-
-      res.status(200).json(foundProducts);
-    } catch (error) {
-      console.log(
-        "[src][controllers][ProductController][searchProductByKeyword] ",
-        error
-      );
-      next(error);
-    }
-  }
-
   public async deleteProductById(
     req: Request,
     res: Response,
@@ -251,39 +213,14 @@ export class ProductController {
     }
   }
 
-  public async getProductsByCategory(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const { categoryName } = req.body;
-
-      if (!categoryName) {
-        console.log(
-          "[src][controllers][ProductController][getProductsByCategory] Category name is required"
-        );
-        res.status(400).send("Category name is required");
-        return;
-      }
-
-      const products = await productServices.findProductsByCategory(
-        categoryName
-      );
-
-      res.status(200).json(products);
-    } catch (error) {
-      console.log(
-        "[src][controllers][ProductController][getProductsByCategory] ",
-        error
-      );
-      next(error);
-    }
-  }
-
   public async findRecommendedProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const products = await productServices.findRecommendedProducts();
+      const currentTime = new Date();
+      const currentHour = currentTime.getHours().toString().padStart(2, '0');
+      const currentMinute = currentTime.getMinutes().toString().padStart(2, '0');
+      const formattedTime = `${currentHour}:${currentMinute}`;
+
+      const products = await productServices.findRecommendedProducts(formattedTime);
 
       const userLocation = {
         latitude: req.body.latitude,
@@ -331,7 +268,12 @@ export class ProductController {
 
   public async findExpiringProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const expiringProducts = await productServices.findExpiringProducts();
+      const currentTime = new Date();
+      const currentHour = currentTime.getHours().toString().padStart(2, '0');
+      const currentMinute = currentTime.getMinutes().toString().padStart(2, '0');
+      const formattedTime = `${currentHour}:${currentMinute}`;
+
+      const expiringProducts = await productServices.findExpiringProducts(formattedTime);
 
       const userLocation = {
         latitude: req.body.latitude,
@@ -436,7 +378,7 @@ export class ProductController {
       const ratings = await ratingServices.findRatingByBakery(bakery?.bakeryId as number);
 
       const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
-      const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
+      const averageRating = ratings.length > 0 ? (totalRatings / ratings.length).toFixed(1) : '0.0';
       const reviewCount = ratings.filter((r) => r.review !== '').length;
 
       res.status(200).json({

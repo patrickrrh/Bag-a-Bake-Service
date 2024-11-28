@@ -1,15 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { OrderSellerServices } from "../services/orderSellerServices";
-import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
+import { calculateDiscountPercentage, getPriceOnOrderDate } from "../utilities/productUtils";
 import { ProductServices } from "../services/productServices";
 import { UserServices } from "../services/userServices";
 import { sendNotifications } from "../utilities/notificationHandler";
-import { OrderCustomerServices } from "../services/orderCustomerServices";
 
 const orderSellerServices = new OrderSellerServices();
 const productServices = new ProductServices();
 const userServices = new UserServices();
-const orderCustomerServices = new OrderCustomerServices();
 
 export class OrderSellerController {
     public async findLatestPendingOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -20,11 +18,12 @@ export class OrderSellerController {
 
             const updatedOrderDetails = latestPendingOrder?.orderDetail.map((detail) => ({
                 ...detail,
-                totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
+                totalDetailPrice: detail.productQuantity * getPriceOnOrderDate(detail.product, latestPendingOrder.orderDate).toNumber(),
+                discountPercentage: calculateDiscountPercentage(detail.product.productPrice, getPriceOnOrderDate(detail.product, latestPendingOrder.orderDate)),
             }));
 
             const totalOrderPrice = latestPendingOrder?.orderDetail.reduce(
-                (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
+                (sum, detail) => sum + detail.productQuantity * getPriceOnOrderDate(detail.product, latestPendingOrder.orderDate).toNumber(), 0
             )
 
             res.status(200).json({
@@ -45,11 +44,12 @@ export class OrderSellerController {
 
             const updatedOrderDetails = latestPaymentOrder?.orderDetail.map((detail) => ({
                 ...detail,
-                totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
+                totalDetailPrice: detail.productQuantity * getPriceOnOrderDate(detail.product, latestPaymentOrder.orderDate).toNumber(),
+                discountPercentage: calculateDiscountPercentage(detail.product.productPrice, getPriceOnOrderDate(detail.product, latestPaymentOrder.orderDate)),
             }));
 
             const totalOrderPrice = latestPaymentOrder?.orderDetail.reduce(
-                (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
+                (sum, detail) => sum + detail.productQuantity * getPriceOnOrderDate(detail.product, latestPaymentOrder.orderDate).toNumber(), 0
             )
 
             res.status(200).json({
@@ -70,11 +70,12 @@ export class OrderSellerController {
 
             const updatedOrderDetails = latestOngoingOrder?.orderDetail.map((detail) => ({
                 ...detail,
-                totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
+                totalDetailPrice: detail.productQuantity * getPriceOnOrderDate(detail.product, latestOngoingOrder.orderDate).toNumber(),
+                discountPercentage: calculateDiscountPercentage(detail.product.productPrice, getPriceOnOrderDate(detail.product, latestOngoingOrder.orderDate)),
             }));
 
             const totalOrderPrice = latestOngoingOrder?.orderDetail.reduce(
-                (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
+                (sum, detail) => sum + detail.productQuantity * getPriceOnOrderDate(detail.product, latestOngoingOrder.orderDate).toNumber(), 0
             )
 
             res.status(200).json({
@@ -140,18 +141,20 @@ export class OrderSellerController {
                 orderStatus = orderStatus === 4 ? [4, 5] : [orderStatus];
             }
 
-            const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus, bakeryId);
+            const statusOrderDirection = orderStatus.includes(4) || orderStatus.includes(5) ? "desc" : "asc";
+
+            const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus, bakeryId, statusOrderDirection);
 
             const newOrderData = await Promise.all(
                 allOrder.map(async (order) => {
                     const updatedOrderDetails = order.orderDetail.map((detail) => ({
                         ...detail,
-                        totalDetailPrice: detail.productQuantity * getTodayPrice(detail.product).toNumber(),
-                        discountPercentage: calculateDiscountPercentage(detail.product.productPrice, getTodayPrice(detail.product)),
+                        totalDetailPrice: detail.productQuantity * getPriceOnOrderDate(detail.product, order.orderDate).toNumber(),
+                        discountPercentage: calculateDiscountPercentage(detail.product.productPrice, getPriceOnOrderDate(detail.product, order.orderDate)),
                     }));
 
                     const totalOrderPrice = order.orderDetail.reduce(
-                        (sum, detail) => sum + detail.productQuantity * getTodayPrice(detail.product).toNumber(), 0
+                        (sum, detail) => sum + detail.productQuantity * getPriceOnOrderDate(detail.product, order.orderDate).toNumber(), 0
                     )
 
                     return { ...order, orderDetail: updatedOrderDetails, totalOrderPrice };
@@ -182,7 +185,7 @@ export class OrderSellerController {
             await orderSellerServices.actionOrder(orderId, orderStatus, paymentStartedAt);
 
             if (orderStatus === 2) {
-                const orderDetails = await orderSellerServices.findOrderDetailByOrderId(orderId);
+                const orderDetails = await orderSellerServices.findOrderDetailsByOrderId(orderId);
 
                 if (orderDetails.length === 0) {
                     res.status(404).json({
@@ -226,11 +229,14 @@ export class OrderSellerController {
     public async cancelOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { orderId } = req.body
+            
+            console.log("is this called")
 
             await orderSellerServices.actionOrder(orderId, 5);
 
+            const orderDetails = await orderSellerServices.findOrderDetailByOrderId(orderId);
 
-            const orderDetails = await orderCustomerServices.getOrderDetailById(orderId);
+            console.log("order details", orderDetails)
 
             if (!orderDetails) {
                 res.status(404).json({ message: "Order details not found" });

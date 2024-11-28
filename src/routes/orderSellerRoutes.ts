@@ -13,7 +13,7 @@ router.post("/count/all/on-payment/order", orderSellerController.countAllOnPayme
 router.post("/count/all/ongoing/order", orderSellerController.countAllOngoingOrder);
 router.post("/get/all/order/status", orderSellerController.findAllOrderByStatus);
 router.put("/action/order", orderSellerController.actionOrder);
-router.post("/cancel/order", orderSellerController.cancelOrder);
+router.post("/seller/cancel/order", orderSellerController.cancelOrder);
 
 export default router;
 
