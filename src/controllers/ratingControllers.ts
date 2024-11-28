@@ -28,7 +28,7 @@ export class RatingController {
     public async findBakeryRatingWithUserDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { bakeryId, star } = req.body;
-            const filterStar = star === "all" ? null : star;
+            const filterStar = star === "Semua" ? null : star;
 
             const ratings = await ratingServices.findBakeryRatingWithUserDetail(bakeryId);
 
