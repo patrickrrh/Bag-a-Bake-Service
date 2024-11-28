@@ -133,7 +133,7 @@ export class OrderSellerServices {
         }
     }
 
-    public async findAllOrderByStatus(orderStatus: number[], bakeryId: number): Promise<OrderWithDetails[]> {
+    public async findAllOrderByStatus(orderStatus: number[], bakeryId: number, statusOrderDirection: "asc" | "desc"): Promise<OrderWithDetails[]> {
         try {
             return await databaseService.getClient().order.findMany({
                 where: {
@@ -155,7 +155,7 @@ export class OrderSellerServices {
                     }
                 },
                 orderBy: {
-                    orderId: "asc"
+                    orderId: statusOrderDirection
                 }
             })
         } catch (error) {

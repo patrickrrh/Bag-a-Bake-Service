@@ -141,7 +141,9 @@ export class OrderSellerController {
                 orderStatus = orderStatus === 4 ? [4, 5] : [orderStatus];
             }
 
-            const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus, bakeryId);
+            const statusOrderDirection = orderStatus.includes(4) || orderStatus.includes(5) ? "desc" : "asc";
+
+            const allOrder = await orderSellerServices.findAllOrderByStatus(orderStatus, bakeryId, statusOrderDirection);
 
             const newOrderData = await Promise.all(
                 allOrder.map(async (order) => {
@@ -227,10 +229,14 @@ export class OrderSellerController {
     public async cancelOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { orderId } = req.body
+            
+            console.log("is this called")
 
             await orderSellerServices.actionOrder(orderId, 5);
 
             const orderDetails = await orderSellerServices.findOrderDetailByOrderId(orderId);
+
+            console.log("order details", orderDetails)
 
             if (!orderDetails) {
                 res.status(404).json({ message: "Order details not found" });

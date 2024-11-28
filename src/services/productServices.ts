@@ -27,7 +27,7 @@ type ProductWithDiscount = Prisma.ProductGetPayload<{
   }
 }>
 
-type ProductWithBakery = {
+interface ProductWithBakery {
   bakeryName: string;
   closingTime: string;
   bakeryId: number;

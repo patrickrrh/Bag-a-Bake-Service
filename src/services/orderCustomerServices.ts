@@ -42,7 +42,7 @@ export class OrderCustomerServices {
         }
     }
 
-    public async getOrderByStatus(orderStatus: number[], userId: number): Promise<OrderWithDetails[]> {
+    public async getOrderByStatus(orderStatus: number[], userId: number, statusOrderDirection: "asc" | "desc"): Promise<OrderWithDetails[]> {
         try {
             const orders = await databaseService.getClient().order.findMany({
                 where: { 
@@ -64,7 +64,7 @@ export class OrderCustomerServices {
                     bakery: true
                 },
                 orderBy: {
-                    orderId: "asc"
+                    orderId: statusOrderDirection
                 }
             });
 
@@ -96,13 +96,20 @@ export class OrderCustomerServices {
         }
     }
 
-    public async findOnPaymentOrders(paymentDueAt: Date): Promise<Order[]> {
+    public async findOnPaymentOrders(paymentDueAt: Date): Promise<OrderWithDetails[]> {
         try {
             return await databaseService.getClient().order.findMany({
                 where: {
                     orderStatus: 2,
                     paymentStartedAt: { lte: paymentDueAt },
                     proofOfPayment: null
+                },
+                include: {
+                    orderDetail: {
+                        include: {
+                            product: true
+                        }
+                    }
                 }
             })
         } catch (error) {

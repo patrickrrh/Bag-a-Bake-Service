@@ -378,7 +378,7 @@ export class ProductController {
       const ratings = await ratingServices.findRatingByBakery(bakery?.bakeryId as number);
 
       const totalRatings = ratings.reduce((sum, r) => sum + r.rating, 0);
-      const averageRating = ratings.length > 0 ? totalRatings / ratings.length : 0;
+      const averageRating = ratings.length > 0 ? (totalRatings / ratings.length).toFixed(1) : '0.0';
       const reviewCount = ratings.filter((r) => r.review !== '').length;
 
       res.status(200).json({

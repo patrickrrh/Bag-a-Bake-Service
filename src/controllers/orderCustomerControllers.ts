@@ -11,6 +11,7 @@ import { ProductServices } from "../services/productServices";
 const orderCustomerServices = new OrderCustomerServices();
 const ratingServices = new RatingServices();
 const userServices = new UserServices();
+const productServices = new ProductServices();
 
 export class OrderCustomerController {
     constructor() {
@@ -30,6 +31,26 @@ export class OrderCustomerController {
 
                 for (const order of orderToDeactive) {
                     await orderCustomerServices.deactiveUnpaidOrders(order.orderId);
+
+                    await Promise.all(
+                        order.orderDetail.map(async (detail) => {
+                            const currentProduct = await productServices.findProductById(detail.productId);
+                            const updatedProductStock = Number(currentProduct?.productStock) + detail.productQuantity;
+                            await productServices.updateProductStock(detail.productId, updatedProductStock);
+                        })
+                    )
+
+                    const seller = await userServices.findSellerByBakeryId(order.bakeryId);
+
+                    if (seller?.pushToken) {
+                        await sendNotifications(seller.pushToken, 'Pesanan Dibatalkan', 'Pesanan dibatalkan secara otomatis karena pembeli belum melakukan pembayaran');
+                    }
+
+                    const buyer = await userServices.findBuyerByOrderId(order.orderId);
+
+                    if (buyer?.pushToken) {
+                        await sendNotifications(buyer.pushToken, 'Pesanan Dibatalkan', 'Pesanan dibatalkan secara otomatis karena belum melakukan pembayaran');
+                    }
                 }
             } catch (error) {
                 console.error("[src][controllers][OrderCustomerController][scheduleDeactiveUnpaidOrders] Error: ", error);
@@ -41,7 +62,7 @@ export class OrderCustomerController {
         try {
             const { userId, orderDetail, bakeryId } = req.body
 
-            if (( !userId || !orderDetail || !bakeryId )) {
+            if ((!userId || !orderDetail || !bakeryId)) {
                 res.status(400)
                 throw new Error('All fields must be filled')
             }
@@ -75,11 +96,13 @@ export class OrderCustomerController {
                 orderStatus = orderStatus === 4 ? [4, 5] : [orderStatus];
             }
 
-            const orders = await orderCustomerServices.getOrderByStatus(orderStatus, userId);
+            const statusOrderDirection = orderStatus.includes(4) || orderStatus.includes(5) ? "desc" : "asc";
+
+            const orders = await orderCustomerServices.getOrderByStatus(orderStatus, userId, statusOrderDirection);
 
             if (orders.length === 0) {
-                res.status(404).json({ 
-                    status: 404, 
+                res.status(404).json({
+                    status: 404,
                     message: "No orders found"
                 });
                 return;
@@ -91,7 +114,7 @@ export class OrderCustomerController {
                     const prevRating = await ratingServices.findRatingByBakery(order.bakeryId);
 
                     const totalRatings = prevRating.reduce((sum, r) => sum + r.rating, 0);
-                    const averageRating = prevRating.length > 0 ? totalRatings / prevRating.length : 0;
+                    const averageRating = prevRating.length > 0 ? (totalRatings / prevRating.length).toFixed(1) : '0.0';
                     const reviewCount = prevRating.filter((r) => r.review !== '').length;
 
                     const updatedOrderDetails = order.orderDetail.map((detail) => {
@@ -130,20 +153,20 @@ export class OrderCustomerController {
 
     public async cancelOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderId } = req.body;
+            const { orderId, bakeryId } = req.body;
             const order = await orderCustomerServices.cancelOrder(orderId);
-    
+
             if (!order) {
                 res.status(404).json({ message: "Order not found" });
                 return;
             }
 
-            const seller = await userServices.findSellerByBakeryId(orderId);
+            const seller = await userServices.findSellerByBakeryId(bakeryId);
 
             if (seller?.pushToken) {
                 await sendNotifications(seller.pushToken, 'Pesanan Dibatalkan', 'Maaf, pembeli telah membatalkan pesanan');
             }
-    
+
             res.status(200).json({
                 status: 200,
                 data: order,
@@ -156,9 +179,15 @@ export class OrderCustomerController {
 
     public async submitProofOfPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderId, proofOfPayment } = req.body;
+            const { orderId, proofOfPayment, bakeryId } = req.body;
             await orderCustomerServices.submitProofOfPayment(orderId, proofOfPayment);
-    
+
+            const seller = await userServices.findSellerByBakeryId(bakeryId);
+
+            if (seller?.pushToken) {
+                await sendNotifications(seller.pushToken, 'Pembayaran Berhasil', 'Harap cek pembayaran dan melakukan konfirmasi');
+            }
+
             res.status(200).json({
                 status: 200,
                 message: "Proof of payment submitted successfully",
