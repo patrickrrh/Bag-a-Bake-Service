@@ -7,11 +7,13 @@ import { sendNotifications } from "../utilities/notificationHandler";
 import { OrderSellerServices } from "../services/orderSellerServices";
 import cron from 'node-cron';
 import { ProductServices } from "../services/productServices";
+import { BakeryServices } from "../services/bakeryServices";
 
 const orderCustomerServices = new OrderCustomerServices();
 const ratingServices = new RatingServices();
 const userServices = new UserServices();
 const productServices = new ProductServices();
+const bakeryServices = new BakeryServices();
 
 export class OrderCustomerController {
     constructor() {
@@ -66,6 +68,27 @@ export class OrderCustomerController {
                 res.status(400)
                 throw new Error('All fields must be filled')
             }
+
+            const bakery = await bakeryServices.findBakeryById(bakeryId);
+
+            if (!bakery || !bakery.closingTime) {
+                res.status(404).send('Bakery not found or closing time not set');
+                return;
+            }
+
+            const currentTime = new Date();
+            const closingTime = new Date();
+            const [closingHour, closingMinute] = bakery.closingTime.split(':').map(Number);
+            closingTime.setHours(closingHour, closingMinute, 0, 0);
+
+            if (currentTime > closingTime) {
+                res.status(403).json({
+                    status: 403,
+                    message: 'The bakery is closed. Please try again during business hours.'
+                });
+                return;
+            }
+
             const order = await orderCustomerServices.createOrder({
                 userId,
                 orderDetail,
