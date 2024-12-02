@@ -14,6 +14,7 @@ const ratingServices = new RatingServices();
 const userServices = new UserServices();
 const productServices = new ProductServices();
 const bakeryServices = new BakeryServices();
+const orderSellerServices = new OrderSellerServices();
 
 export class OrderCustomerController {
     constructor() {
@@ -176,12 +177,24 @@ export class OrderCustomerController {
 
     public async cancelOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderId, bakeryId } = req.body;
+            const { orderId, bakeryId, isUpdateStock } = req.body;
             const order = await orderCustomerServices.cancelOrder(orderId);
 
             if (!order) {
                 res.status(404).json({ message: "Order not found" });
                 return;
+            }
+
+            if (isUpdateStock) {
+                const orderDetail = await orderSellerServices.findOrderDetailsByOrderId(orderId);
+    
+                await Promise.all(
+                    orderDetail.map(async (detail) => {
+                        const currentProduct = await productServices.findProductById(detail.productId);
+                        const updatedProductStock = Number(currentProduct?.productStock) + detail.productQuantity;
+                        await productServices.updateProductStock(detail.productId, updatedProductStock);
+                    })
+                )
             }
 
             const seller = await userServices.findSellerByBakeryId(bakeryId);

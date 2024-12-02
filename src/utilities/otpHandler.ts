@@ -4,7 +4,7 @@ export const generateOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export const generateMailContent = (otp: string, userName: string) => {
+export const generateMailContent = (otp: string, userName?: string) => {
     return `
         <div style="padding: 10px; font-family: 'Poppins', sans-serif;">
             <style>
@@ -14,7 +14,7 @@ export const generateMailContent = (otp: string, userName: string) => {
                 }
             </style>
             <h1>Verifikasi Email</h1>
-            <p>Hai, <span style="font-weight: bold;">${userName}</span></p>
+            <p>Hai, <span style="font-weight: bold;">${userName || ''}</span></p>
             <p style="font-weight: 500;">Masukkan kode OTP berikut untuk verifikasi email Anda:</p>
             <div style="display: flex; justify-content: center; align-items: center; border: 1px solid #828282; max-width: 150px; max-height: 55px; border-radius: 10px; margin: 0 auto">
                 <h3>${otp}</h3>

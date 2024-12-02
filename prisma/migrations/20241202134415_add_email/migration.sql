@@ -15,7 +15,10 @@ CREATE TABLE "User" (
     "userPhoneNumber" TEXT,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "regionId" INTEGER,
+    "address" TEXT,
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
+    "pushToken" TEXT,
     "signUpDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("userId")
@@ -31,9 +34,22 @@ CREATE TABLE "Bakery" (
     "bakeryPhoneNumber" TEXT NOT NULL,
     "openingTime" TEXT NOT NULL,
     "closingTime" TEXT NOT NULL,
-    "regionId" INTEGER NOT NULL,
+    "bakeryAddress" TEXT NOT NULL,
+    "bakeryLatitude" DOUBLE PRECISION NOT NULL,
+    "bakeryLongitude" DOUBLE PRECISION NOT NULL,
 
     CONSTRAINT "Bakery_pkey" PRIMARY KEY ("bakeryId")
+);
+
+-- CreateTable
+CREATE TABLE "Payment" (
+    "paymentId" SERIAL NOT NULL,
+    "bakeryId" INTEGER NOT NULL,
+    "paymentMethod" TEXT NOT NULL,
+    "paymentService" TEXT NOT NULL,
+    "paymentDetail" TEXT NOT NULL,
+
+    CONSTRAINT "Payment_pkey" PRIMARY KEY ("paymentId")
 );
 
 -- CreateTable
@@ -79,6 +95,8 @@ CREATE TABLE "Order" (
     "bakeryId" INTEGER NOT NULL,
     "orderDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "orderStatus" INTEGER NOT NULL DEFAULT 0,
+    "proofOfPayment" TEXT,
+    "paymentStartedAt" TIMESTAMP(3),
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("orderId")
 );
@@ -114,11 +132,14 @@ CREATE TABLE "RefreshToken" (
 );
 
 -- CreateTable
-CREATE TABLE "Region" (
-    "regionId" SERIAL NOT NULL,
-    "regionName" TEXT NOT NULL,
+CREATE TABLE "Rating" (
+    "ratingId" SERIAL NOT NULL,
+    "orderId" INTEGER NOT NULL,
+    "rating" INTEGER NOT NULL,
+    "review" TEXT NOT NULL,
+    "createdDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Region_pkey" PRIMARY KEY ("regionId")
+    CONSTRAINT "Rating_pkey" PRIMARY KEY ("ratingId")
 );
 
 -- CreateIndex
@@ -130,17 +151,17 @@ CREATE UNIQUE INDEX "Bakery_userId_key" ON "Bakery"("userId");
 -- CreateIndex
 CREATE UNIQUE INDEX "Favorite_userId_bakeryId_key" ON "Favorite"("userId", "bakeryId");
 
--- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("roleId") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- CreateIndex
+CREATE UNIQUE INDEX "Rating_orderId_key" ON "Rating"("orderId");
 
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_regionId_fkey" FOREIGN KEY ("regionId") REFERENCES "Region"("regionId") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("roleId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Bakery" ADD CONSTRAINT "Bakery_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Bakery" ADD CONSTRAINT "Bakery_regionId_fkey" FOREIGN KEY ("regionId") REFERENCES "Region"("regionId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_bakeryId_fkey" FOREIGN KEY ("bakeryId") REFERENCES "Bakery"("bakeryId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_bakeryId_fkey" FOREIGN KEY ("bakeryId") REFERENCES "Bakery"("bakeryId") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -171,3 +192,6 @@ ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_bakeryId_fkey" FOREIGN KEY ("bak
 
 -- AddForeignKey
 ALTER TABLE "RefreshToken" ADD CONSTRAINT "RefreshToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Rating" ADD CONSTRAINT "Rating_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("orderId") ON DELETE RESTRICT ON UPDATE CASCADE;
