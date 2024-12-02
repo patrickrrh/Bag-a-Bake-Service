@@ -132,7 +132,7 @@ export class AuthController {
 
     public signIn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { userId } = req.body
+            const { userId, pushToken } = req.body
 
             const user = await userServices.findUserById(userId);
             if (!user) {
@@ -140,6 +140,8 @@ export class AuthController {
                 res.status(404).json({ error: 'User not found' });
                 return;
             }
+
+            await userServices.updatePushToken(userId, pushToken);
 
             const jti = uuidv4();
             const { accessToken, refreshToken } = generateTokens(userId, jti);
@@ -237,12 +239,44 @@ export class AuthController {
         }
     }
 
+    public async sendSignUpOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                console.log("[src][controllers][AuthController][sendSignUpOTP] Missing email");
+                res.status(400).json({ error: 'Missing email' });
+                return;
+            }
+
+            const otp = generateOTP();
+            const expiresAt = Date.now() + 60 * 1000;
+            otpStore[email.toLowerCase()] = { otp, expiresAt };
+
+            const info = sendMail(email.toLowerCase(), "Kode OTP Registrasi", generateMailContent(otp));
+
+            if (info) {
+                console.log("[src][controllers][AuthController][sendSignUpOTP] Email sent successfully");
+                res.status(200).json({
+                    status: 200,
+                    message: 'Kode OTP berhasil dikirim, silakan cek email Anda'
+                });
+            } else {
+                console.log("[src][controllers][AuthController][sendSignUpOTP] Failed to send email");
+                res.status(500).json({
+                    status: 500,
+                    error: 'Gagal mengirim email'
+                });
+            }
+        } catch (error) {
+            console.log("[src][controllers][AuthController][sendSignUpOTP] ", error);
+            next(error);
+        }
+    }
+
     public async verifyOTP(req: Request, res: Response, next: NextFunction): Promise<boolean> {
         try {
             const { email, inputOTP } = req.body;
-
-            console.log("email disini: ", email);
-            console.log("otp disini: ", inputOTP);
 
             if (!email || !inputOTP) {
                 console.log("[src][controllers][AuthController][verifyOTP] Missing email or OTP");
