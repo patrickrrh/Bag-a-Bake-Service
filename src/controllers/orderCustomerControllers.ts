@@ -19,6 +19,23 @@ const orderSellerServices = new OrderSellerServices();
 export class OrderCustomerController {
     constructor() {
         this.scheduleDeactiveUnpaidOrders();
+        this.scheduleResetIsCancelled();
+    }
+
+    private scheduleResetIsCancelled() {
+        cron.schedule('0 0 * * *', async () => {
+            console.log("Running daily reset at 00:00...");
+            try {
+                const usersToReset = await userServices.findUsersWithCancelledThreshold(3); 
+
+                for (const user of usersToReset) {
+                    await userServices.updateUserCancelled(user.userId, 0); 
+                    console.log(`User ${user.userId}'s isCancelled count reset.`);
+                }
+            } catch (error) {
+                console.error("Error during daily reset:", error);
+            }
+        });
     }
 
     private scheduleDeactiveUnpaidOrders() {
@@ -70,6 +87,20 @@ export class OrderCustomerController {
                 throw new Error('All fields must be filled')
             }
 
+            const user = await userServices.findUserById(userId);
+            if (!user) {
+                res.status(404).json({ message: "User not found" });
+                return;
+            }
+
+            if (user.isCancelled > 3) {
+                res.status(403).json({
+                    status: 403,
+                    message: "You cannot create a new order because your account has exceeded the cancellation limit."
+                });
+                return;
+            }
+
             const bakery = await bakeryServices.findBakeryById(bakeryId);
 
             if (!bakery || !bakery.closingTime) {
@@ -83,8 +114,8 @@ export class OrderCustomerController {
             closingTime.setHours(closingHour, closingMinute, 0, 0);
 
             if (currentTime > closingTime) {
-                res.status(403).json({
-                    status: 403,
+                res.status(404).json({
+                    status: 404,
                     message: 'The bakery is closed. Please try again during business hours.'
                 });
                 return;
@@ -198,7 +229,6 @@ export class OrderCustomerController {
             }
 
             const seller = await userServices.findSellerByBakeryId(bakeryId);
-
             if (seller?.pushToken) {
                 await sendNotifications(seller.pushToken, 'Pesanan Dibatalkan', 'Maaf, pembeli telah membatalkan pesanan');
             }

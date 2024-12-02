@@ -37,6 +37,7 @@ model User {
   signUpDate DateTime @default(now())
   refreshToken RefreshToken[]
   Favorite Favorite[]
+  isCancelled Int
 }
 
 model Bakery {
