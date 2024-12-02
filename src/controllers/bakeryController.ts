@@ -6,10 +6,12 @@ import { Bakery } from "@prisma/client";
 import { calculateDiscountPercentage, getTodayPrice } from "../utilities/productUtils";
 import getDistance from "geolib/es/getPreciseDistance";
 import { getPreciseDistance } from "geolib";
+import { UserServices } from "../services/userServices";
 
 const bakeryServices = new BakeryServices();
 const productServices = new ProductServices();
 const ratingServices = new RatingServices();
+const userServices = new UserServices();
 
 export class BakeryController {
     public async findBakeryById(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -199,4 +201,19 @@ export class BakeryController {
         }
     }
 
+    public async getUserId(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { userId } = req.body;
+            const user = await userServices.findUserById(userId);
+            if (!user) {
+                console.log("[src][controllers][BakeryController][getUserId] User not found");
+                res.status(404).json({ error: 'User not found' });
+                return;
+            }
+            res.status(200).json({ status: 200, data: user });
+        } catch (error) {
+            console.log("[src][controllers][BakeryController][getUserId] ", error);
+            next(error);
+        }
+    }
 }

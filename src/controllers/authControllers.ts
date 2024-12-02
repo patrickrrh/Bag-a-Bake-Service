@@ -76,7 +76,8 @@ export class AuthController {
                 address: req.body.address,
                 latitude: req.body.latitude,
                 longitude: req.body.longitude,
-                pushToken: req.body.pushToken
+                pushToken: req.body.pushToken,
+                isCancelled: 0
             };
 
             console.log("user data", userData.pushToken)

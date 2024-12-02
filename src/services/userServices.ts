@@ -14,6 +14,7 @@ export interface CreateUserInput {
     latitude?: number;
     longitude?: number;
     pushToken?: string;
+    isCancelled: number;
 }
 
 export class UserServices {
@@ -53,19 +54,19 @@ export class UserServices {
             console.log("[src][services][UserServices][findUserById] User ID is required")
             throw new Error('User ID is required');
         }
-    
+
         try {
             return await databaseService.getClient().user.findUnique({
-                where: { 
+                where: {
                     userId
-                 },
-                 include: {
+                },
+                include: {
                     bakery: {
                         include: {
                             payment: true
                         }
                     }
-                 }
+                }
             })
         } catch (error) {
             console.log("[src][services][UserServices][findUserById]", error)
@@ -111,7 +112,7 @@ export class UserServices {
                     user: true,
                 }
             });
-    
+
             return bakery ? bakery.user : null;
         } catch (error) {
             console.log("[src][services][UserServices][findSellerByBakeryId]", error);
@@ -129,7 +130,7 @@ export class UserServices {
                     user: true,
                 }
             });
-    
+
             return order ? order.user : null;
         } catch (error) {
             console.log("[src][services][UserServices][findBuyerByOrderId]", error);
@@ -151,11 +152,46 @@ export class UserServices {
                     }
                 }
             });
-    
+
             return order ? order.bakery.user : null;
         } catch (error) {
             console.log("[src][services][UserServices][findSellerByOrderId]", error);
             throw new Error("Failed to find user");
+        }
+    }
+
+
+    public async updateUserCancelled(userId: number, isCancelled: number): Promise<void> {
+        try {
+            await databaseService.getClient().user.update({
+                where: { userId },
+                data: {
+                    isCancelled,
+                }
+            });
+        } catch (error) {
+            console.log("[src][services][UserServices][updateUserCancelled]", error);
+            throw new Error("Failed to update user cancellation status");
+        }
+    }
+
+    public async findUsersWithCancelledThreshold(threshold: number): Promise<User[]> {
+        if (threshold < 0) {
+            console.log("[src][services][UserServices][findUsersWithCancelledThreshold] Threshold must be a non-negative number");
+            throw new Error("Threshold must be a non-negative number");
+        }
+    
+        try {
+            return await databaseService.getClient().user.findMany({
+                where: {
+                    isCancelled: {
+                        gte: threshold, // Find users with isCancelled >= threshold
+                    }
+                }
+            });
+        } catch (error) {
+            console.log("[src][services][UserServices][findUsersWithCancelledThreshold]", error);
+            throw new Error("Failed to find users with the specified cancellation threshold");
         }
     }
 }

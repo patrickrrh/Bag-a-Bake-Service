@@ -10,4 +10,6 @@ router.post("/get/bakery/by-id", bakeryController.findBakeryById);
 router.post("/get/bakery/with-filters", bakeryController.findBakeryWithFilters);
 router.put("/update/bakery", bakeryController.updateBakery);
 
+router.post("/get/user/by-id", bakeryController.getUserId);
+
 export default router;

@@ -76,10 +76,30 @@ export class OrderCustomerServices {
     
     public async cancelOrder(orderId: number): Promise<Order | null> {
         try {
-            return await databaseService.getClient().order.update({
+            const updatedOrder = await databaseService.getClient().order.update({
                 where: { orderId },
                 data: { orderStatus: 5 },
             });
+
+            const order = await databaseService.getClient().order.findUnique({
+                where: { orderId },
+                include: { user: true }, 
+            });
+
+            if (!order) {
+                throw new Error("Order not found");
+            }
+
+            await databaseService.getClient().user.update({
+                where: { userId: order.userId },
+                data: {
+                    isCancelled: {
+                        increment: 1,
+                    },
+                },
+            });
+
+            return updatedOrder;
         } catch (err) {
             throw new Error("Failed to cancel order");
         }
