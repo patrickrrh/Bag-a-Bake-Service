@@ -11,6 +11,7 @@ router.post("/refresh_token", authController.refreshAuthentication);
 router.post("/is_email_registered", authController.isEmailRegistered);
 router.post("/check_account", authController.checkAccount);
 router.post("/send/otp", authController.sendOTP);
+router.post("/send/sign_up/otp", authController.sendSignUpOTP);
 router.post("/verify/otp", authController.verifyOTP);
 router.put("/change/password", authController.changePassword);
 router.put("/update/user", authController.updateUser);

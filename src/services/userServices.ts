@@ -194,4 +194,20 @@ export class UserServices {
             throw new Error("Failed to find users with the specified cancellation threshold");
         }
     }
+
+    public async updatePushToken(userId: number, pushToken: string): Promise<User | null> {
+        try {
+            return await databaseService.getClient().user.update({
+                where: {
+                    userId
+                },
+                data: {
+                    pushToken
+                }
+            })
+        } catch (error) {
+            console.log("[src][services][UserServices][updatePushToken]", error)
+            throw new Error("Failed to update push token")
+        }
+    }
 }
