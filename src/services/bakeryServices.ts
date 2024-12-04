@@ -147,5 +147,47 @@ export class BakeryServices {
             throw new Error("Failed to update bakery");
         }
     }
+ 
+    public async findListBakery(isActive?: number): Promise<Bakery[]> {
+        try {
+            return await databaseService.getClient().bakery.findMany({
+                where: {
+                    ...(isActive !== undefined
+                        ? { isActive }
+                        : { isActive: { not: 0 } })
+                },
+                include: {
+                    user: true,
+                    payment: true
+                }
+            });
+        } catch (error) {
+            console.log("[src][services][BakeryServices][findListBakery] ", error);
+            throw new Error("Failed to find bakery");
+        }
+    }
     
+    public async updateBakeryIsActive(bakeryId: number, isActive: number): Promise<Bakery> {
+        try {
+            return await databaseService.getClient().bakery.update({
+                where: { bakeryId },
+                data: { isActive },
+            });
+        } catch (error) {
+            console.log("[src][services][BakeryServices][updateBakeryIsActive] ", error);
+            throw new Error("Failed to update bakery");
+        }
+    }
+
+    public async deleteBakery(bakeryId: number): Promise<Bakery> {
+        try {
+            console.log("bakery id", bakeryId)
+            return await databaseService.getClient().bakery.delete({
+                where: { bakeryId },
+            });
+        } catch (error) {
+            console.log("[src][services][BakeryServices][deleteBakery] ", error);
+            throw new Error("Failed to delete bakery");
+        }
+    }
 }

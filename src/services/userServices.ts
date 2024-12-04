@@ -14,7 +14,6 @@ export interface CreateUserInput {
     latitude?: number;
     longitude?: number;
     pushToken?: string;
-    isCancelled: number;
 }
 
 export class UserServices {
@@ -38,7 +37,6 @@ export class UserServices {
 
     public async createUser(user: CreateUserInput): Promise<User> {
         user.password = bycrpt.hashSync(user.password, 12);
-        console.log(user);
         try {
             return await databaseService.getClient().user.create({
                 data: user
@@ -185,7 +183,7 @@ export class UserServices {
             return await databaseService.getClient().user.findMany({
                 where: {
                     isCancelled: {
-                        gte: threshold, // Find users with isCancelled >= threshold
+                        gte: threshold,
                     }
                 }
             });

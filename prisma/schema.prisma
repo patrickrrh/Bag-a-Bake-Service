@@ -37,7 +37,7 @@ model User {
   signUpDate DateTime @default(now())
   refreshToken RefreshToken[]
   Favorite Favorite[]
-  isCancelled Int
+  isCancelled Int @default(0)
 }
 
 model Bakery {
@@ -53,6 +53,7 @@ model Bakery {
   bakeryAddress String
   bakeryLatitude Float
   bakeryLongitude Float
+  isActive Int @default(0)
   product Product[]
   favorite Favorite[]
   order Order[]
@@ -62,7 +63,7 @@ model Bakery {
 model Payment {
   paymentId Int @id @default(autoincrement())
   bakeryId Int
-  bakery Bakery @relation(fields: [bakeryId], references: [bakeryId])
+  bakery Bakery @relation(fields: [bakeryId], references: [bakeryId], onDelete: Cascade)
   paymentMethod String
   paymentService String
   paymentDetail String

@@ -9,7 +9,9 @@ router.post("/get/bakery/by-product", bakeryController.findBakeryByProduct);
 router.post("/get/bakery/by-id", bakeryController.findBakeryById);
 router.post("/get/bakery/with-filters", bakeryController.findBakeryWithFilters);
 router.put("/update/bakery", bakeryController.updateBakery);
-
 router.post("/get/user/by-id", bakeryController.getUserId);
+router.post("/get/list/bakery", bakeryController.findListBakery);
+router.put("/update/bakery/active", bakeryController.updateBakeryIsActive);
+router.post("/delete/bakery", bakeryController.deleteBakery);
 
 export default router;

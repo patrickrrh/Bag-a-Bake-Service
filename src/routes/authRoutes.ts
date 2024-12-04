@@ -5,7 +5,8 @@ const router = express.Router();
 
 const authController = new AuthController();
 
-router.post("/sign_up", authController.signUp);
+router.post("/sign_up_user", authController.signUpUser);
+router.post("/sign_up_bakery", authController.signUpBakery);
 router.post("/sign_in", authController.signIn);
 router.post("/refresh_token", authController.refreshAuthentication);
 router.post("/is_email_registered", authController.isEmailRegistered);
@@ -16,5 +17,6 @@ router.post("/verify/otp", authController.verifyOTP);
 router.put("/change/password", authController.changePassword);
 router.put("/update/user", authController.updateUser);
 router.put("/revoke/tokens", authController.revokeTokens);
+router.post("/refresh/user_status", authController.refreshUserStatus);
 
 export default router
