@@ -11,6 +11,7 @@ import databaseService from "../script";
 import { sendMail } from "../config/mailer";
 import { generateMailContent, generateOTP, otpStore } from "../utilities/otpHandler";
 import { CreatePaymentInput, PaymentServices } from "../services/paymentServices";
+import { generateNewBakeryMailContent } from "../utilities/mailHandler";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
@@ -114,12 +115,8 @@ export class AuthController {
                 bakeryLongitude: req.body.bakeryLongitude
             };
 
-            console.log("bakery data", bakeryData)
-
             const newBakery = await bakeryServices.createBakery(bakeryData);
             
-            console.log("new bakery", newBakery)
-
             const paymentDataArray: CreatePaymentInput[] = req.body.paymentMethods.map((payment: any) => ({
                 bakeryId: newBakery.bakeryId,
                 paymentMethod: payment.paymentMethod,
@@ -129,7 +126,21 @@ export class AuthController {
 
             await paymentServices.insertPayment(paymentDataArray);
 
-            res.status(201).json({ status: 201, message: 'Bakery created successfully' });
+            const info = sendMail("support@bagabake.com", "Pendaftaran Bakeri Baru", generateNewBakeryMailContent(bakeryData.bakeryName));
+
+            if (info) {
+                console.log("[src][controllers][AuthController][signUpBakery] Email sent successfully");
+                res.status(201).json({
+                    status: 201,
+                    message: 'Berhasil membuat bakeri dan mengirim email'
+                });
+            } else {
+                console.log("[src][controllers][AuthController][signUpBakery] Failed to send email");
+                res.status(500).json({
+                    status: 500,
+                    error: 'Gagal mengirim email'
+                });
+            }
         } catch (error) {
             console.log("[src][controllers][AuthController][signUpBakery] ", error);
             next(error);

@@ -34,6 +34,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const mailer_1 = require("../config/mailer");
 const otpHandler_1 = require("../utilities/otpHandler");
 const paymentServices_1 = require("../services/paymentServices");
+const mailHandler_1 = require("../utilities/mailHandler");
 const userServices = new userServices_1.UserServices();
 const authServices = new authServices_1.AuthServices();
 const bakeryServices = new bakeryServices_1.BakeryServices();
@@ -154,9 +155,7 @@ class AuthController {
                     bakeryLatitude: req.body.bakeryLatitude,
                     bakeryLongitude: req.body.bakeryLongitude
                 };
-                console.log("bakery data", bakeryData);
                 const newBakery = yield bakeryServices.createBakery(bakeryData);
-                console.log("new bakery", newBakery);
                 const paymentDataArray = req.body.paymentMethods.map((payment) => ({
                     bakeryId: newBakery.bakeryId,
                     paymentMethod: payment.paymentMethod,
@@ -164,7 +163,21 @@ class AuthController {
                     paymentDetail: payment.paymentDetail
                 }));
                 yield paymentServices.insertPayment(paymentDataArray);
-                res.status(201).json({ status: 201, message: 'Bakery created successfully' });
+                const info = (0, mailer_1.sendMail)("support@bagabake.com", "Pendaftaran Bakeri Baru", (0, mailHandler_1.generateNewBakeryMailContent)(bakeryData.bakeryName));
+                if (info) {
+                    console.log("[src][controllers][AuthController][signUpBakery] Email sent successfully");
+                    res.status(201).json({
+                        status: 201,
+                        message: 'Berhasil membuat bakeri dan mengirim email'
+                    });
+                }
+                else {
+                    console.log("[src][controllers][AuthController][signUpBakery] Failed to send email");
+                    res.status(500).json({
+                        status: 500,
+                        error: 'Gagal mengirim email'
+                    });
+                }
             }
             catch (error) {
                 console.log("[src][controllers][AuthController][signUpBakery] ", error);
