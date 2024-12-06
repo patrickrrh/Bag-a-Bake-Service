@@ -1,12 +1,12 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-    // service: 'gmail',
-    host: 'sandbox.smtp.mailtrap.io',
-    port: '2525',
+    host: 'jkt17.dewaweb.com',
+    port: '465',
+    secure: true,
     auth: {
-        user: process.env.MAILTRAP_USER,
-        pass: process.env.MAILTRAP_PASS
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS
     }
 })
 
@@ -14,7 +14,7 @@ export const sendMail = (to: string, subject: string, html: string) => {
     const mailOptions = {
         from: {
             name: "Bag A Bake",
-            address: process.env.MAILTRAP_USER
+            address: process.env.MAIL_USER
         },
         to: [to],
         subject,
