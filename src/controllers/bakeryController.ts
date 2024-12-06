@@ -7,6 +7,8 @@ import { calculateDiscountPercentage, getTodayPrice } from "../utilities/product
 import getDistance from "geolib/es/getPreciseDistance";
 import { getPreciseDistance } from "geolib";
 import { UserServices } from "../services/userServices";
+import { sendMail } from "../config/mailer";
+import { generateActivateBakeryMailContent, generateDeactivateBakeryMailContent, generateRejectBakeryMailContent } from "../utilities/mailHandler";
 
 const bakeryServices = new BakeryServices();
 const productServices = new ProductServices();
@@ -213,6 +215,97 @@ export class BakeryController {
             res.status(200).json({ status: 200, data: user });
         } catch (error) {
             console.log("[src][controllers][BakeryController][getUserId] ", error);
+            next(error);
+        }
+    }
+
+    public async findListBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { isActive } = req.body;
+            
+            const bakeries = await bakeryServices.findListBakery(isActive);
+
+            if (!bakeries) {
+                console.log("[src][controllers][BakeryController][findListBakery] There is no bakery");
+                res.status(404).json({ error: 'There is no bakery' });
+                return;
+            }
+
+            res.status(200).json({ status: 200, data: bakeries });
+        } catch (error) {
+            console.log("[src][controllers][BakeryController][findListBakery] ", error);
+            next(error);
+        }
+    }
+
+    public async updateBakeryIsActive(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { bakeryId, isActive, email, userName, status, message } = req.body;
+
+            const updatedBakery = await bakeryServices.updateBakeryIsActive(bakeryId, isActive);
+
+            if (!updatedBakery) {
+                console.log("[src][controllers][BakeryController][updateBakeryIsActive] Bakery not found");
+                res.status(404).json({ error: 'Bakery not found' });
+                return;
+            }
+
+            let info: any;
+            if (isActive === 1) {
+                info = sendMail(email, "Bakeri Anda Telah Aktif", generateActivateBakeryMailContent(userName, status, message));
+            } else {
+                info = sendMail(email, "Bakeri Anda Telah Dinonaktifkan", generateDeactivateBakeryMailContent(userName, status, message));
+            }
+
+            if (info) {
+                console.log("[src][controllers][AuthController][updateBakeryIsActive] Email sent successfully");
+                res.status(200).json({
+                    status: 200,
+                    message: 'Berhasil mengirim email'
+                });
+            } else {
+                console.log("[src][controllers][AuthController][updateBakeryIsActive] Failed to send email");
+                res.status(500).json({
+                    status: 500,
+                    error: 'Gagal mengirim email'
+                });
+            }
+        } catch (error) {
+            console.log("[src][controllers][BakeryController][updateBakeryIsActive] ", error);
+            next(error);
+        }
+    }
+
+    public async deleteBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { bakeryId, email, userName, status, message } = req.body;
+
+            console.log("bakery id at controller", bakeryId)
+
+            const deletedBakery = await bakeryServices.deleteBakery(bakeryId);
+            if (!deletedBakery) {
+                console.log("[src][controllers][BakeryController][deleteBakery] Bakery not found");
+                res.status(404).json({ error: 'Bakery not found' });
+                return;
+            }
+            
+            const info = sendMail(email, "Registrasi Bakeri Anda Ditolak", generateRejectBakeryMailContent(userName, status, message));
+
+            if (info) {
+                console.log("[src][controllers][AuthController][deleteBakery] Email sent successfully");
+                res.status(200).json({
+                    status: 200,
+                    message: 'Berhasil mengirim email'
+                });
+            } else {
+                console.log("[src][controllers][AuthController][deleteBakery] Failed to send email");
+                res.status(500).json({
+                    status: 500,
+                    error: 'Gagal mengirim email'
+                });
+            }
+        } catch (error) {
+            console.log("[src][controllers][BakeryController][deleteBakery] ", error);
             next(error);
         }
     }

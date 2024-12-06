@@ -64,7 +64,7 @@ export class AuthController {
         }
     }
 
-    public async signUp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public async signUpUser(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const userData: CreateUserInput = {
                 roleId: req.body.roleId,
@@ -77,10 +77,7 @@ export class AuthController {
                 latitude: req.body.latitude,
                 longitude: req.body.longitude,
                 pushToken: req.body.pushToken,
-                isCancelled: 0
             };
-
-            console.log("user data", userData.pushToken)
 
             const checkExistingUser = await userServices.findUserByEmail(userData.email.toLowerCase());
             if (checkExistingUser) {
@@ -88,35 +85,6 @@ export class AuthController {
             }
 
             const newUser = await userServices.createUser(userData);
-
-            if (newUser.roleId === 2) {
-                const bakeryData: CreateBakeryInput = {
-                    userId: newUser.userId,
-                    bakeryName: req.body.bakeryName,
-                    bakeryImage: req.body.bakeryImage,
-                    bakeryDescription: req.body.bakeryDescription,
-                    bakeryPhoneNumber: req.body.bakeryPhoneNumber,
-                    openingTime: req.body.openingTime,
-                    closingTime: req.body.closingTime,
-                    bakeryAddress: req.body.bakeryAddress,
-                    bakeryLatitude: req.body.bakeryLatitude,
-                    bakeryLongitude: req.body.bakeryLongitude
-                };
-
-                const newBakery = await bakeryServices.createBakery({
-                    ...bakeryData,
-                    userId: newUser.userId,
-                })
-
-                const paymentDataArray: CreatePaymentInput[] = req.body.paymentMethods.map((payment: any) => ({
-                    bakeryId: newBakery.bakeryId,
-                    paymentMethod: payment.paymentMethod,
-                    paymentService: payment.paymentService,
-                    paymentDetail: payment.paymentDetail
-                }));
-
-                await paymentServices.insertPayment(paymentDataArray);
-            }
 
             const user = await userServices.findUserById(newUser.userId);
 
@@ -126,7 +94,44 @@ export class AuthController {
 
             res.status(201).json({ accessToken, refreshToken, user });
         } catch (error) {
-            console.log("[src][controllers][AuthController][signUp] ", error);
+            console.log("[src][controllers][AuthController][signUpUser] ", error);
+            next(error);
+        }
+    }
+
+    public async signUpBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const bakeryData: CreateBakeryInput = {
+                userId: req.body.userId,
+                bakeryName: req.body.bakeryName,
+                bakeryImage: req.body.bakeryImage,
+                bakeryDescription: req.body.bakeryDescription,
+                bakeryPhoneNumber: req.body.bakeryPhoneNumber,
+                openingTime: req.body.openingTime,
+                closingTime: req.body.closingTime,
+                bakeryAddress: req.body.bakeryAddress,
+                bakeryLatitude: req.body.bakeryLatitude,
+                bakeryLongitude: req.body.bakeryLongitude
+            };
+
+            console.log("bakery data", bakeryData)
+
+            const newBakery = await bakeryServices.createBakery(bakeryData);
+            
+            console.log("new bakery", newBakery)
+
+            const paymentDataArray: CreatePaymentInput[] = req.body.paymentMethods.map((payment: any) => ({
+                bakeryId: newBakery.bakeryId,
+                paymentMethod: payment.paymentMethod,
+                paymentService: payment.paymentService,
+                paymentDetail: payment.paymentDetail
+            }));
+
+            await paymentServices.insertPayment(paymentDataArray);
+
+            res.status(201).json({ status: 201, message: 'Bakery created successfully' });
+        } catch (error) {
+            console.log("[src][controllers][AuthController][signUpBakery] ", error);
             next(error);
         }
     }
@@ -186,7 +191,7 @@ export class AuthController {
 
             res.status(200).json({
                 status: 200,
-                data: { accessToken, refreshToken: newRefreshToken }
+                data: { accessToken, refreshToken: newRefreshToken, user: getUser }
             });
         } catch (error) {
             console.log("[src][controllers][AuthController][refreshAuthentication] ", error);
@@ -242,7 +247,7 @@ export class AuthController {
 
     public async sendSignUpOTP(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { email } = req.body;
+            const { email, userName } = req.body;
 
             if (!email) {
                 console.log("[src][controllers][AuthController][sendSignUpOTP] Missing email");
@@ -254,7 +259,7 @@ export class AuthController {
             const expiresAt = Date.now() + 60 * 1000;
             otpStore[email.toLowerCase()] = { otp, expiresAt };
 
-            const info = sendMail(email.toLowerCase(), "Kode OTP Registrasi", generateMailContent(otp));
+            const info = sendMail(email.toLowerCase(), "Kode OTP Registrasi", generateMailContent(otp, userName));
 
             if (info) {
                 console.log("[src][controllers][AuthController][sendSignUpOTP] Email sent successfully");
@@ -395,9 +400,46 @@ export class AuthController {
             await authServices.revokeTokens(userId);
 
             console.log("[src][controllers][AuthController][revokeTokens] Tokens revoked successfully");
-            res.status(200).json({ status: 200,message: 'Tokens revoked successfully' });
+            res.status(200).json({ status: 200, message: 'Tokens revoked successfully' });
         } catch (error) {
             console.log("[src][controllers][AuthController][revokeTokens] ", error);
+            next(error);
+        }
+    }
+
+    public async refreshUserStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { refreshToken } = req.body
+
+            if (!refreshToken) {
+                console.log("[src][controllers][AuthController][refreshUserStatus] Missing refresh token");
+                res.status(400).json({ error: 'Missing refresh token' })
+                return;
+            }
+
+            const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { userId: number, jti: string };
+            const getRefreshToken = await authServices.findRefreshTokenById(payload.jti);
+            if (!getRefreshToken || getRefreshToken.revoked === true) {
+                console.log("[src][controllers][AuthController][refreshUserStatus] Refresh token is invalid");
+                res.status(401).json({ error: 'Unauthorized' })
+                return;
+            }
+
+            const getUser = await userServices.findUserById(payload.userId);
+            if (!getUser) {
+                console.log("[src][controllers][AuthController][refreshUserStatus] User not found");
+                res.status(401).json({ error: 'Unauthorized' })
+                return;
+            }
+
+            console.log("get user", getUser)
+
+            res.status(200).json({
+                status: 200,
+                user: getUser
+            })
+        } catch (error) {
+            console.log("[src][controllers][AuthController][refreshUserStatus] ", error);
             next(error);
         }
     }

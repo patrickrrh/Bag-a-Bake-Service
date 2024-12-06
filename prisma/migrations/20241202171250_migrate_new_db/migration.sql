@@ -20,6 +20,7 @@ CREATE TABLE "User" (
     "longitude" DOUBLE PRECISION,
     "pushToken" TEXT,
     "signUpDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isCancelled" INTEGER NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("userId")
 );

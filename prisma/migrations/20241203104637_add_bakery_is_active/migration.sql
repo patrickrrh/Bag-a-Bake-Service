@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Bakery" ADD COLUMN     "isActive" INTEGER NOT NULL DEFAULT 0;
