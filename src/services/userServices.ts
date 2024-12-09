@@ -6,7 +6,7 @@ import { json } from 'express';
 export interface CreateUserInput {
     roleId: number;
     userName: string;
-    userImage?: string;
+    userImage?: string | null;
     userPhoneNumber?: string;
     email: string;
     password: string;

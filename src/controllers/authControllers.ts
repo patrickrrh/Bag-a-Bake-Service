@@ -12,6 +12,8 @@ import { sendMail } from "../config/mailer";
 import { generateMailContent, generateOTP, otpStore } from "../utilities/otpHandler";
 import { CreatePaymentInput, PaymentServices } from "../services/paymentServices";
 import { generateNewBakeryMailContent } from "../utilities/mailHandler";
+import path from "path";
+import fs from 'fs';
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
@@ -67,20 +69,36 @@ export class AuthController {
 
     public async signUpUser(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
+            console.log("req body", req.body)
+
+            let userImage: string | undefined = undefined;
+            
+            const base64Image = req.body.userImage;
+            if (base64Image) {
+                const buffer = Buffer.from(base64Image, 'base64');
+                const fileName = `profile-${Date.now()}.jpg`;
+
+                const filePath = path.join(__dirname, '../uploads/profile', fileName);
+                fs.writeFileSync(filePath, buffer);
+
+                console.log("cek path", filePath)
+                userImage = path.join('uploads/profile', fileName);
+            }
+
             const userData: CreateUserInput = {
-                roleId: req.body.roleId,
+                roleId: parseInt(req.body.roleId),
                 userName: req.body.userName,
-                userImage: req.body.userImage,
+                userImage: userImage,
                 userPhoneNumber: req.body.userPhoneNumber,
-                email: req.body.email.toLowerCase(),
+                email: req.body.email,
                 password: req.body.password,
                 address: req.body.address,
-                latitude: req.body.latitude,
-                longitude: req.body.longitude,
+                latitude: parseFloat(req.body.latitude),
+                longitude: parseFloat(req.body.longitude),
                 pushToken: req.body.pushToken,
             };
 
-            const checkExistingUser = await userServices.findUserByEmail(userData.email.toLowerCase());
+            const checkExistingUser = await userServices.findUserByEmail(userData.email);
             if (checkExistingUser) {
                 return;
             }
