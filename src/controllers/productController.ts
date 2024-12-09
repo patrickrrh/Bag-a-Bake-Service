@@ -36,7 +36,6 @@ export class ProductController {
   ): Promise<void> {
     try {
       const productData: CreateProductInput = req.body;
-      console.log(productData);
       if (
         !productData.productName ||
         !productData.productPrice ||
@@ -67,7 +66,10 @@ export class ProductController {
 
       const createdProduct = await productServices.createProduct(productData);
 
-      res.status(201).json(createdProduct);
+      res.status(201).json({
+        status: 201,
+        data: createdProduct,
+      });
     } catch (error) {
       console.log(
         "[src][controllers][ProductController][createProduct] ",

@@ -112,7 +112,9 @@ export class AuthController {
                 closingTime: req.body.closingTime,
                 bakeryAddress: req.body.bakeryAddress,
                 bakeryLatitude: req.body.bakeryLatitude,
-                bakeryLongitude: req.body.bakeryLongitude
+                bakeryLongitude: req.body.bakeryLongitude,
+                isHalal: req.body.isHalal || 0,
+                halalCertificate: req.body.halalCertificate || null
             };
 
             const newBakery = await bakeryServices.createBakery(bakeryData);
