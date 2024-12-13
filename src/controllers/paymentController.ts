@@ -42,17 +42,13 @@ export class PaymentController {
                 userPrevQris = true;
             }
 
-            console.log("use prev qris", userPrevQris)
-
             for (const payment of payments) {
                 let qrisImage: string | undefined = undefined;
 
                 if (!userPrevQris && payment.paymentMethod === 'QRIS') {
-                    console.log("masuk sini kah 2")
                     const prevQris = prevPaymentMethods.find(p => p.paymentMethod === 'QRIS');
                     if (prevQris) {
-                        console.log("masa iya masuk sini")
-                        const oldImagePath = path.join(__dirname, '../uploads/bakery-qris', prevQris.paymentDetail);
+                        const oldImagePath = path.join(__dirname, '../../../public_html/uploads/bakery-qris', prevQris.paymentDetail);
                         if (fs.existsSync(oldImagePath)) {
                             fs.unlinkSync(oldImagePath);
                         }
@@ -61,7 +57,7 @@ export class PaymentController {
                     const buffer = Buffer.from(payment.paymentDetail, 'base64');
                     const fileName = `qris-${Date.now()}.jpeg`;
 
-                    const filePath = path.join(__dirname, '../uploads/bakery-qris', fileName);
+                    const filePath = path.join(__dirname, '../../../public_html/uploads/bakery-qris', fileName);
                     fs.writeFileSync(filePath, buffer);
 
                     qrisImage = path.join(fileName);

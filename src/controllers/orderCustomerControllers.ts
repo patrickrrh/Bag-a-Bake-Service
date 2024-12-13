@@ -255,7 +255,7 @@ export class OrderCustomerController {
                 const buffer = Buffer.from(encodedProofOfPayment, 'base64');
                 const fileName = `proofOfPayment-${Date.now()}.jpeg`;
 
-                const filePath = path.join(__dirname, '../uploads/proof-of-payment', fileName);
+                const filePath = path.join(__dirname, '../../../public_html/uploads/proof-of-payment', fileName);
                 fs.writeFileSync(filePath, buffer);
 
                 proofOfPaymentImage = path.join(fileName);

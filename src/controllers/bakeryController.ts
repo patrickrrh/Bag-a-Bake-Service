@@ -203,7 +203,7 @@ export class BakeryController {
             if (encodedBakeryImage) {
 
                 if (prevBakery.bakeryImage) {
-                    const oldImagePath = path.join(__dirname, '../uploads/bakery-picture', prevBakery.bakeryImage);
+                    const oldImagePath = path.join(__dirname, '../../../public_html/uploads/bakery-image', prevBakery.bakeryImage);
                     if (fs.existsSync(oldImagePath)) {
                         fs.unlinkSync(oldImagePath);
                     }
@@ -212,7 +212,7 @@ export class BakeryController {
                 const buffer = Buffer.from(encodedBakeryImage, 'base64');
                 const fileName = `bakeryImage-${Date.now()}.jpeg`;
 
-                const filePath = path.join(__dirname, '../uploads/bakery-picture', fileName);
+                const filePath = path.join(__dirname, '../../../public_html/uploads/bakery-image', fileName);
                 fs.writeFileSync(filePath, buffer);
 
                 updateData.bakeryImage = path.join(fileName);

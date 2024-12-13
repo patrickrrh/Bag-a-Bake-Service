@@ -48,11 +48,7 @@ class PaymentServices {
     }
     updatePayments(payments) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log("PAYMENT", payments);
             try {
-                if (payments.length === 0) {
-                    throw new Error("No payments provided for update");
-                }
                 const bakeryId = payments[0].bakeryId;
                 yield script_1.default.getClient().$transaction((prisma) => __awaiter(this, void 0, void 0, function* () {
                     yield prisma.payment.deleteMany({

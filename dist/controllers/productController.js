@@ -18,6 +18,8 @@ const productUtils_1 = require("../utilities/productUtils");
 const ratingServices_1 = require("../services/ratingServices");
 const geolib_1 = require("geolib");
 const node_cron_1 = __importDefault(require("node-cron"));
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const productServices = new productServices_1.ProductServices();
 const ratingServices = new ratingServices_1.RatingServices();
 class ProductController {
@@ -39,7 +41,6 @@ class ProductController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const productData = req.body;
-                console.log(productData);
                 if (!productData.productName ||
                     !productData.productPrice ||
                     !productData.productImage ||
@@ -60,8 +61,19 @@ class ProductController {
                         return;
                     }
                 }
+                const encodedProductImage = req.body.productImage;
+                if (encodedProductImage) {
+                    const buffer = Buffer.from(encodedProductImage, 'base64');
+                    const fileName = `productImage-${Date.now()}.jpeg`;
+                    const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/product', fileName);
+                    fs_1.default.writeFileSync(filePath, buffer);
+                    productData.productImage = path_1.default.join(fileName);
+                }
                 const createdProduct = yield productServices.createProduct(productData);
-                res.status(201).json(createdProduct);
+                res.status(201).json({
+                    status: 201,
+                    data: createdProduct,
+                });
             }
             catch (error) {
                 console.log("[src][controllers][ProductController][createProduct] ", error);
@@ -97,14 +109,11 @@ class ProductController {
             try {
                 const { productId } = req.body;
                 const productData = req.body;
-                console.log(productData);
                 if (!productId ||
                     !productData.productName ||
                     !productData.productPrice ||
-                    !productData.productImage ||
                     !productData.productDescription ||
                     !productData.productExpirationDate ||
-                    !productData.productStock ||
                     !productData.bakeryId ||
                     !productData.categoryId) {
                     console.log("[src][controllers][ProductController][updateProductById] Missing required fields");
@@ -118,13 +127,40 @@ class ProductController {
                         return;
                     }
                 }
+                const prevProduct = yield productServices.findProductById(productId);
+                if (!prevProduct) {
+                    console.log("[src][controllers][ProductController][updateProductById] Product ID Not Found");
+                    res.status(400).json({
+                        status: 400,
+                        message: "Product ID Not Found",
+                    });
+                    return;
+                }
+                const encodedProductImage = req.body.productImage;
+                if (encodedProductImage) {
+                    if (prevProduct.productImage) {
+                        const oldImagePath = path_1.default.join(__dirname, '../../../public_html/uploads/product', prevProduct.productImage);
+                        if (fs_1.default.existsSync(oldImagePath)) {
+                            fs_1.default.unlinkSync(oldImagePath);
+                        }
+                    }
+                    const buffer = Buffer.from(encodedProductImage, 'base64');
+                    const fileName = `productImage-${Date.now()}.jpeg`;
+                    const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/product', fileName);
+                    fs_1.default.writeFileSync(filePath, buffer);
+                    productData.productImage = path_1.default.join(fileName);
+                }
                 const updatedProduct = yield productServices.updateProductById(productId, productData);
+                console.log("update product res", updatedProduct);
                 if (!updatedProduct) {
                     console.log("[src][controllers][ProductController][updateProductById] Product ID Not Found");
                     res.status(400).send("Product ID Not Found");
                     return;
                 }
-                res.status(200).json(updatedProduct);
+                res.status(200).json({
+                    status: 200,
+                    data: updatedProduct,
+                });
             }
             catch (error) {
                 console.log("[src][controllers][ProductController][updateProductById] ", error);
