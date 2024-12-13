@@ -35,6 +35,8 @@ const mailer_1 = require("../config/mailer");
 const otpHandler_1 = require("../utilities/otpHandler");
 const paymentServices_1 = require("../services/paymentServices");
 const mailHandler_1 = require("../utilities/mailHandler");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const userServices = new userServices_1.UserServices();
 const authServices = new authServices_1.AuthServices();
 const bakeryServices = new bakeryServices_1.BakeryServices();
@@ -111,19 +113,28 @@ class AuthController {
     signUpUser(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                let userImage = undefined;
+                const base64Image = req.body.userImage;
+                if (base64Image) {
+                    const buffer = Buffer.from(base64Image, 'base64');
+                    const fileName = `profile-${Date.now()}.jpeg`;
+                    const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/profile', fileName);
+                    fs_1.default.writeFileSync(filePath, buffer);
+                    userImage = path_1.default.join(fileName);
+                }
                 const userData = {
-                    roleId: req.body.roleId,
+                    roleId: parseInt(req.body.roleId),
                     userName: req.body.userName,
-                    userImage: req.body.userImage,
+                    userImage: userImage,
                     userPhoneNumber: req.body.userPhoneNumber,
-                    email: req.body.email.toLowerCase(),
+                    email: req.body.email,
                     password: req.body.password,
                     address: req.body.address,
-                    latitude: req.body.latitude,
-                    longitude: req.body.longitude,
+                    latitude: parseFloat(req.body.latitude),
+                    longitude: parseFloat(req.body.longitude),
                     pushToken: req.body.pushToken,
                 };
-                const checkExistingUser = yield userServices.findUserByEmail(userData.email.toLowerCase());
+                const checkExistingUser = yield userServices.findUserByEmail(userData.email);
                 if (checkExistingUser) {
                     return;
                 }
@@ -143,10 +154,28 @@ class AuthController {
     signUpBakery(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                let bakeryImage = '';
+                const encodedBakeryImage = req.body.bakeryImage;
+                if (encodedBakeryImage) {
+                    const buffer = Buffer.from(encodedBakeryImage, 'base64');
+                    const fileName = `bakeryImage-${Date.now()}.jpeg`;
+                    const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/bakery-image', fileName);
+                    fs_1.default.writeFileSync(filePath, buffer);
+                    bakeryImage = path_1.default.join(fileName);
+                }
+                let halalCertificateImage = undefined;
+                const encodedHalalCertificateImage = req.body.halalCertificate;
+                if (encodedHalalCertificateImage) {
+                    const buffer = Buffer.from(encodedHalalCertificateImage, 'base64');
+                    const fileName = `halalCertificate-${Date.now()}.jpeg`;
+                    const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/bakery-halal-certificate', fileName);
+                    fs_1.default.writeFileSync(filePath, buffer);
+                    halalCertificateImage = path_1.default.join(fileName);
+                }
                 const bakeryData = {
                     userId: req.body.userId,
                     bakeryName: req.body.bakeryName,
-                    bakeryImage: req.body.bakeryImage,
+                    bakeryImage: bakeryImage,
                     bakeryDescription: req.body.bakeryDescription,
                     bakeryPhoneNumber: req.body.bakeryPhoneNumber,
                     openingTime: req.body.openingTime,
@@ -155,15 +184,28 @@ class AuthController {
                     bakeryLatitude: req.body.bakeryLatitude,
                     bakeryLongitude: req.body.bakeryLongitude,
                     isHalal: req.body.isHalal || 0,
-                    halalCertificate: req.body.halalCertificate || null
+                    halalCertificate: halalCertificateImage
                 };
                 const newBakery = yield bakeryServices.createBakery(bakeryData);
-                const paymentDataArray = req.body.paymentMethods.map((payment) => ({
-                    bakeryId: newBakery.bakeryId,
-                    paymentMethod: payment.paymentMethod,
-                    paymentService: payment.paymentService,
-                    paymentDetail: payment.paymentDetail
-                }));
+                const paymentDataArray = [];
+                for (const payment of req.body.paymentMethods) {
+                    let qrisImage = undefined;
+                    if (payment.paymentMethod === 'QRIS') {
+                        const buffer = Buffer.from(payment.paymentDetail, 'base64');
+                        const fileName = `qris-${Date.now()}.jpeg`;
+                        const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/bakery-qris', fileName);
+                        fs_1.default.writeFileSync(filePath, buffer);
+                        qrisImage = path_1.default.join(fileName);
+                        payment.paymentDetail = qrisImage;
+                    }
+                    console.log("updated payment", payment);
+                    paymentDataArray.push({
+                        bakeryId: newBakery.bakeryId,
+                        paymentMethod: payment.paymentMethod,
+                        paymentService: payment.paymentService,
+                        paymentDetail: payment.paymentDetail
+                    });
+                }
                 yield paymentServices.insertPayment(paymentDataArray);
                 const info = (0, mailer_1.sendMail)("support@bagabake.com", "Pendaftaran Bakeri Baru", (0, mailHandler_1.generateNewBakeryMailContent)(bakeryData.bakeryName));
                 if (info) {
@@ -393,14 +435,32 @@ class AuthController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const _a = req.body, { userId } = _a, updateData = __rest(_a, ["userId"]);
-                const updatedUser = yield userServices.updateUserById(parseInt(userId), updateData);
-                if (!updatedUser) {
-                    console.log("[src][controllers][AuthController][updateUser] User not found");
-                    res.status(404).json({ error: 'User not found' });
+                const prevUser = yield userServices.findUserById(userId);
+                if (!prevUser) {
+                    console.log("[src][controllers][ProductController][updateUser] User ID Not Found");
+                    res.status(400).json({
+                        status: 400,
+                        message: "User ID Not Found",
+                    });
                     return;
                 }
+                const encodedUserImage = req.body.userImage;
+                if (encodedUserImage) {
+                    if (prevUser.userImage) {
+                        const oldImagePath = path_1.default.join(__dirname, '../../../public_html/uploads/profile', prevUser.userImage);
+                        if (fs_1.default.existsSync(oldImagePath)) {
+                            fs_1.default.unlinkSync(oldImagePath);
+                        }
+                    }
+                    const buffer = Buffer.from(encodedUserImage, 'base64');
+                    const fileName = `profile-${Date.now()}.jpeg`;
+                    const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/profile', fileName);
+                    fs_1.default.writeFileSync(filePath, buffer);
+                    updateData.userImage = path_1.default.join(fileName);
+                }
+                const updatedUser = yield userServices.updateUserById(parseInt(userId), updateData);
                 console.log("[src][controllers][AuthController][updateUser] User updated successfully");
-                res.status(200).json({ message: 'User updated successfully', user: updatedUser });
+                res.status(200).json({ status: 200, message: 'User updated successfully', user: updatedUser });
             }
             catch (error) {
                 console.log("[src][controllers][AuthController][updateUser] ", error);
@@ -444,7 +504,6 @@ class AuthController {
                     res.status(401).json({ error: 'Unauthorized' });
                     return;
                 }
-                console.log("get user", getUser);
                 res.status(200).json({
                     status: 200,
                     user: getUser

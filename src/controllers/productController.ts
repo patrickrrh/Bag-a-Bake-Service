@@ -72,7 +72,7 @@ export class ProductController {
         const buffer = Buffer.from(encodedProductImage, 'base64');
         const fileName = `productImage-${Date.now()}.jpeg`;
 
-        const filePath = path.join(__dirname, '../uploads/product', fileName);
+        const filePath = path.join(__dirname, '../../../public_html/uploads/product', fileName);
         fs.writeFileSync(filePath, buffer);
 
         productData.productImage = path.join(fileName);
@@ -177,7 +177,7 @@ export class ProductController {
       if (encodedProductImage) {
 
         if (prevProduct.productImage) {
-          const oldImagePath = path.join(__dirname, '../uploads/product', prevProduct.productImage);
+          const oldImagePath = path.join(__dirname, '../../../public_html/uploads/product', prevProduct.productImage);
           if (fs.existsSync(oldImagePath)) {
             fs.unlinkSync(oldImagePath);
           }
@@ -186,7 +186,7 @@ export class ProductController {
         const buffer = Buffer.from(encodedProductImage, 'base64');
         const fileName = `productImage-${Date.now()}.jpeg`;
 
-        const filePath = path.join(__dirname, '../uploads/product', fileName);
+        const filePath = path.join(__dirname, '../../../public_html/uploads/product', fileName);
         fs.writeFileSync(filePath, buffer);
 
         productData.productImage = path.join(fileName);

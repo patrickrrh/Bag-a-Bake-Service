@@ -15,6 +15,7 @@ const orderCustomerRoutes_1 = __importDefault(require("./routes/orderCustomerRou
 const orderSellerRoutes_1 = __importDefault(require("./routes/orderSellerRoutes"));
 const ratingRoutes_1 = __importDefault(require("./routes/ratingRoutes"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
+const path_1 = __importDefault(require("path"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({
@@ -22,7 +23,7 @@ app.use((0, cors_1.default)({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept', 'X-Auth-Token'],
 }));
-app.use(express_1.default.json());
+app.use(express_1.default.json({ limit: '25mb' }));
 const apiRouter = express_1.default.Router();
 apiRouter.use(authRoutes_1.default);
 apiRouter.use(productRoutes_1.default);
@@ -33,6 +34,16 @@ apiRouter.use(orderCustomerRoutes_1.default);
 apiRouter.use(orderSellerRoutes_1.default);
 apiRouter.use(ratingRoutes_1.default);
 apiRouter.use(paymentRoutes_1.default);
+app.use('/images/:type', (req, res, next) => {
+    const { type } = req.params;
+    if (['profile', 'product', 'bakery-image', 'bakery-halal-certificate', 'bakery-qris', 'proof-of-payment'].includes(type)) {
+        const folderPath = path_1.default.join(__dirname, '..', '..', 'public_html', 'uploads', type);
+        return express_1.default.static(folderPath)(req, res, next);
+    }
+    else {
+        return res.status(400).send('Invalid image type');
+    }
+});
 app.use('/api', apiRouter);
 const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {

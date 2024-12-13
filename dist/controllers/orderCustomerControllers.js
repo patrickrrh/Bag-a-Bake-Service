@@ -22,6 +22,8 @@ const orderSellerServices_1 = require("../services/orderSellerServices");
 const node_cron_1 = __importDefault(require("node-cron"));
 const productServices_1 = require("../services/productServices");
 const bakeryServices_1 = require("../services/bakeryServices");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const orderCustomerServices = new orderCustomerServices_1.OrderCustomerServices();
 const ratingServices = new ratingServices_1.RatingServices();
 const userServices = new userServices_1.UserServices();
@@ -210,8 +212,17 @@ class OrderCustomerController {
     submitProofOfPayment(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { orderId, proofOfPayment, bakeryId } = req.body;
-                yield orderCustomerServices.submitProofOfPayment(orderId, proofOfPayment);
+                const { orderId, bakeryId } = req.body;
+                let proofOfPaymentImage = '';
+                const encodedProofOfPayment = req.body.proofOfPayment;
+                if (encodedProofOfPayment) {
+                    const buffer = Buffer.from(encodedProofOfPayment, 'base64');
+                    const fileName = `proofOfPayment-${Date.now()}.jpeg`;
+                    const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/proof-of-payment', fileName);
+                    fs_1.default.writeFileSync(filePath, buffer);
+                    proofOfPaymentImage = path_1.default.join(fileName);
+                }
+                yield orderCustomerServices.submitProofOfPayment(orderId, proofOfPaymentImage);
                 const seller = yield userServices.findSellerByBakeryId(bakeryId);
                 if (seller === null || seller === void 0 ? void 0 : seller.pushToken) {
                     yield (0, notificationHandler_1.sendNotifications)(seller.pushToken, 'Pembayaran Berhasil', 'Harap cek pembayaran dan melakukan konfirmasi');

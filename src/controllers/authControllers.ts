@@ -77,7 +77,7 @@ export class AuthController {
                 const buffer = Buffer.from(base64Image, 'base64');
                 const fileName = `profile-${Date.now()}.jpeg`;
 
-                const filePath = path.join(__dirname, '../uploads/profile', fileName);
+                const filePath = path.join(__dirname, '../../../public_html/uploads/profile', fileName);
                 fs.writeFileSync(filePath, buffer);
 
                 userImage = path.join(fileName);
@@ -122,9 +122,9 @@ export class AuthController {
             const encodedBakeryImage = req.body.bakeryImage;
             if (encodedBakeryImage) {
                 const buffer = Buffer.from(encodedBakeryImage, 'base64');
-                const fileName = `bakery-picture-${Date.now()}.jpeg`;
+                const fileName = `bakeryImage-${Date.now()}.jpeg`;
 
-                const filePath = path.join(__dirname, '../uploads/bakery-picture', fileName);
+                const filePath = path.join(__dirname, '../../../public_html/uploads/bakery-image', fileName);
                 fs.writeFileSync(filePath, buffer);
 
                 bakeryImage = path.join(fileName);
@@ -134,9 +134,9 @@ export class AuthController {
             const encodedHalalCertificateImage = req.body.halalCertificate;
             if (encodedHalalCertificateImage) {
                 const buffer = Buffer.from(encodedHalalCertificateImage, 'base64');
-                const fileName = `halal-certificate-${Date.now()}.jpeg`;
+                const fileName = `halalCertificate-${Date.now()}.jpeg`;
 
-                const filePath = path.join(__dirname, '../uploads/bakery-halal-certificate', fileName);
+                const filePath = path.join(__dirname, '../../../public_html/uploads/bakery-halal-certificate', fileName);
                 fs.writeFileSync(filePath, buffer);
 
                 halalCertificateImage = path.join(fileName);
@@ -167,7 +167,7 @@ export class AuthController {
                     const buffer = Buffer.from(payment.paymentDetail, 'base64');
                     const fileName = `qris-${Date.now()}.jpeg`;
 
-                    const filePath = path.join(__dirname, '../uploads/bakery-qris', fileName);
+                    const filePath = path.join(__dirname, '../../../public_html/uploads/bakery-qris', fileName);
                     fs.writeFileSync(filePath, buffer);
 
                     qrisImage = path.join(fileName);
@@ -462,7 +462,7 @@ export class AuthController {
             if (encodedUserImage) {
 
                 if (prevUser.userImage) {
-                    const oldImagePath = path.join(__dirname, '../uploads/profile', prevUser.userImage);
+                    const oldImagePath = path.join(__dirname, '../../../public_html/uploads/profile', prevUser.userImage);
                     if (fs.existsSync(oldImagePath)) {
                         fs.unlinkSync(oldImagePath);
                     }
@@ -471,7 +471,7 @@ export class AuthController {
                 const buffer = Buffer.from(encodedUserImage, 'base64');
                 const fileName = `profile-${Date.now()}.jpeg`;
 
-                const filePath = path.join(__dirname, '../uploads/profile', fileName);
+                const filePath = path.join(__dirname, '../../../public_html/uploads/profile', fileName);
                 fs.writeFileSync(filePath, buffer);
 
                 updateData.userImage = path.join(fileName);

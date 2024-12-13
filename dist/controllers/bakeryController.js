@@ -19,6 +19,9 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BakeryController = void 0;
 const bakeryServices_1 = require("../services/bakeryServices");
@@ -29,6 +32,8 @@ const geolib_1 = require("geolib");
 const userServices_1 = require("../services/userServices");
 const mailer_1 = require("../config/mailer");
 const mailHandler_1 = require("../utilities/mailHandler");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const bakeryServices = new bakeryServices_1.BakeryServices();
 const productServices = new productServices_1.ProductServices();
 const ratingServices = new ratingServices_1.RatingServices();
@@ -178,14 +183,32 @@ class BakeryController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const _a = req.body, { bakeryId } = _a, updateData = __rest(_a, ["bakeryId"]);
-                const updatedBakery = yield bakeryServices.updateBakeryById(parseInt(bakeryId), updateData);
-                if (!updatedBakery) {
-                    console.log("[src][controllers][BakeryController][updateBakery] Bakery not found");
-                    res.status(404).json({ error: 'Bakery not found' });
+                const prevBakery = yield bakeryServices.findBakeryById(parseInt(bakeryId));
+                if (!prevBakery) {
+                    console.log("[src][controllers][BakeryController][updateBakery] Bakery Not Found");
+                    res.status(404).json({
+                        status: 404,
+                        message: "Bakery Not Found",
+                    });
                     return;
                 }
+                const encodedBakeryImage = req.body.bakeryImage;
+                if (encodedBakeryImage) {
+                    if (prevBakery.bakeryImage) {
+                        const oldImagePath = path_1.default.join(__dirname, '../../../public_html/uploads/bakery-image', prevBakery.bakeryImage);
+                        if (fs_1.default.existsSync(oldImagePath)) {
+                            fs_1.default.unlinkSync(oldImagePath);
+                        }
+                    }
+                    const buffer = Buffer.from(encodedBakeryImage, 'base64');
+                    const fileName = `bakeryImage-${Date.now()}.jpeg`;
+                    const filePath = path_1.default.join(__dirname, '../../../public_html/uploads/bakery-image', fileName);
+                    fs_1.default.writeFileSync(filePath, buffer);
+                    updateData.bakeryImage = path_1.default.join(fileName);
+                }
+                const updatedBakery = yield bakeryServices.updateBakeryById(parseInt(bakeryId), updateData);
                 console.log("[src][controllers][BakeryController][updateBakery] Bakery updated successfully");
-                res.status(200).json({ message: 'Bakery updated successfully', bakery: updatedBakery });
+                res.status(200).json({ status: 200, message: 'Bakery updated successfully', bakery: updatedBakery });
             }
             catch (error) {
                 console.log("[src][controllers][BakeryController][updateBakery] ", error);

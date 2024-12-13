@@ -35,11 +35,12 @@ apiRouter.use(orderCustomerRoutes);
 apiRouter.use(orderSellerRoutes);
 apiRouter.use(ratingRoutes);
 apiRouter.use(paymentRoutes);
+
 app.use('/images/:type', (req, res, next) => {
     const { type } = req.params;
     
-    if (['profile', 'product', 'bakery-picture', 'bakery-halal-certificate', 'bakery-qris', 'proof-of-payment'].includes(type)) {
-      const folderPath = path.join(__dirname, 'uploads', type); 
+    if (['profile', 'product', 'bakery-image', 'bakery-halal-certificate', 'bakery-qris', 'proof-of-payment'].includes(type)) {
+      const folderPath = path.join(__dirname, '..', '..', 'public_html', 'uploads', type);
       return express.static(folderPath)(req, res, next);
     } else {
       return res.status(400).send('Invalid image type');
