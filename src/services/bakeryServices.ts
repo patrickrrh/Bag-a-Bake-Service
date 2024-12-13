@@ -13,7 +13,7 @@ export interface CreateBakeryInput {
     bakeryLatitude: number;
     bakeryLongitude: number;
     isHalal: number;
-    halalCertificate: string;
+    halalCertificate?: string;
 }
 
 type BakeryWithProduct = Prisma.BakeryGetPayload<{

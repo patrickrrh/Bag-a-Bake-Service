@@ -14,7 +14,7 @@ const createUploadMiddleware = (name: string) => {
           },
     });
 
-    return multer({ storage: storage });
+    return multer({ storage: storage, limits: { fileSize: 52428800 } });
 }
 
 export default createUploadMiddleware;
