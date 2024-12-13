@@ -37,12 +37,7 @@ export class PaymentServices {
     }
 
     public async updatePayments(payments: CreatePaymentInput[]): Promise<void> {
-      console.log("PAYMENT", payments);
-      try {
-        if (payments.length === 0) {
-          throw new Error("No payments provided for update");
-        }
-  
+      try {  
         const bakeryId = payments[0].bakeryId;
   
         await databaseService.getClient().$transaction(async (prisma) => {
@@ -62,9 +57,7 @@ export class PaymentServices {
           });
         });
   
-        console.log(
-          "[src][services][PaymentServices][updatePayments] Payments updated successfully"
-        );
+        console.log("[src][services][PaymentServices][updatePayments] Payments updated successfully");
       } catch (error) {
         console.log("[src][services][PaymentServices][updatePayments] ", error);
         throw new Error("Failed to update payments");

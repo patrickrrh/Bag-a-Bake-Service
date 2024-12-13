@@ -181,7 +181,6 @@ class BakeryServices {
     deleteBakery(bakeryId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log("bakery id", bakeryId);
                 return yield script_1.default.getClient().bakery.delete({
                     where: { bakeryId },
                 });

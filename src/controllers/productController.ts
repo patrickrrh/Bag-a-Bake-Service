@@ -6,6 +6,8 @@ import { RatingServices } from "../services/ratingServices";
 import getDistance from "geolib/es/getPreciseDistance";
 import { getPreciseDistance } from "geolib";
 import cron from "node-cron";
+import path from "path";
+import fs from "fs";
 
 const productServices = new ProductServices();
 const ratingServices = new RatingServices();
@@ -36,7 +38,6 @@ export class ProductController {
   ): Promise<void> {
     try {
       const productData: CreateProductInput = req.body;
-      console.log(productData);
       if (
         !productData.productName ||
         !productData.productPrice ||
@@ -55,6 +56,7 @@ export class ProductController {
         return;
       }
 
+
       for (const disc of productData.discount) {
         if (!disc.discountAmount) {
           console.log(
@@ -65,9 +67,23 @@ export class ProductController {
         }
       }
 
+      const encodedProductImage = req.body.productImage;
+      if (encodedProductImage) {
+        const buffer = Buffer.from(encodedProductImage, 'base64');
+        const fileName = `productImage-${Date.now()}.jpeg`;
+
+        const filePath = path.join(__dirname, '../uploads/product', fileName);
+        fs.writeFileSync(filePath, buffer);
+
+        productData.productImage = path.join(fileName);
+      }
+
       const createdProduct = await productServices.createProduct(productData);
 
-      res.status(201).json(createdProduct);
+      res.status(201).json({
+        status: 201,
+        data: createdProduct,
+      });
     } catch (error) {
       console.log(
         "[src][controllers][ProductController][createProduct] ",
@@ -120,15 +136,12 @@ export class ProductController {
     try {
       const { productId } = req.body;
       const productData: CreateProductInput = req.body;
-      console.log(productData);
       if (
         !productId ||
         !productData.productName ||
         !productData.productPrice ||
-        !productData.productImage ||
         !productData.productDescription ||
         !productData.productExpirationDate ||
-        !productData.productStock ||
         !productData.bakeryId ||
         !productData.categoryId
       ) {
@@ -138,6 +151,7 @@ export class ProductController {
         res.status(400).send("Missing required fields");
         return;
       }
+
 
       for (const disc of productData.discount) {
         if (!disc.discountAmount) {
@@ -149,10 +163,41 @@ export class ProductController {
         }
       }
 
+      const prevProduct = await productServices.findProductById(productId);
+      if (!prevProduct) {
+        console.log("[src][controllers][ProductController][updateProductById] Product ID Not Found");
+        res.status(400).json({
+          status: 400,
+          message: "Product ID Not Found",
+        });
+        return;
+      }
+
+      const encodedProductImage = req.body.productImage;
+      if (encodedProductImage) {
+
+        if (prevProduct.productImage) {
+          const oldImagePath = path.join(__dirname, '../uploads/product', prevProduct.productImage);
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath);
+          }
+        }
+
+        const buffer = Buffer.from(encodedProductImage, 'base64');
+        const fileName = `productImage-${Date.now()}.jpeg`;
+
+        const filePath = path.join(__dirname, '../uploads/product', fileName);
+        fs.writeFileSync(filePath, buffer);
+
+        productData.productImage = path.join(fileName);
+      }
+
       const updatedProduct = await productServices.updateProductById(
         productId,
         productData
       );
+
+      console.log("update product res", updatedProduct)
 
       if (!updatedProduct) {
         console.log(
@@ -162,7 +207,10 @@ export class ProductController {
         return;
       }
 
-      res.status(200).json(updatedProduct);
+      res.status(200).json({
+        status: 200,
+        data: updatedProduct,
+      });
     } catch (error) {
       console.log(
         "[src][controllers][ProductController][updateProductById] ",

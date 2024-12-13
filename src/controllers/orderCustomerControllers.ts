@@ -8,6 +8,8 @@ import { OrderSellerServices } from "../services/orderSellerServices";
 import cron from 'node-cron';
 import { ProductServices } from "../services/productServices";
 import { BakeryServices } from "../services/bakeryServices";
+import path from "path";
+import fs from "fs";
 
 const orderCustomerServices = new OrderCustomerServices();
 const ratingServices = new RatingServices();
@@ -245,8 +247,22 @@ export class OrderCustomerController {
 
     public async submitProofOfPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { orderId, proofOfPayment, bakeryId } = req.body;
-            await orderCustomerServices.submitProofOfPayment(orderId, proofOfPayment);
+            const { orderId, bakeryId } = req.body;
+
+            let proofOfPaymentImage = '';            
+            const encodedProofOfPayment = req.body.proofOfPayment;
+            if (encodedProofOfPayment) {
+                const buffer = Buffer.from(encodedProofOfPayment, 'base64');
+                const fileName = `proofOfPayment-${Date.now()}.jpeg`;
+
+                const filePath = path.join(__dirname, '../uploads/proof-of-payment', fileName);
+                fs.writeFileSync(filePath, buffer);
+
+                proofOfPaymentImage = path.join(fileName);
+            }
+
+
+            await orderCustomerServices.submitProofOfPayment(orderId, proofOfPaymentImage);
 
             const seller = await userServices.findSellerByBakeryId(bakeryId);
 

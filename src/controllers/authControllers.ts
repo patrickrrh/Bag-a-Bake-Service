@@ -12,6 +12,9 @@ import { sendMail } from "../config/mailer";
 import { generateMailContent, generateOTP, otpStore } from "../utilities/otpHandler";
 import { CreatePaymentInput, PaymentServices } from "../services/paymentServices";
 import { generateNewBakeryMailContent } from "../utilities/mailHandler";
+import path from "path";
+import fs from "fs";
+import { json } from "stream/consumers";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
@@ -67,20 +70,33 @@ export class AuthController {
 
     public async signUpUser(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
+            let userImage: string | undefined = undefined;
+
+            const base64Image = req.body.userImage;
+            if (base64Image) {
+                const buffer = Buffer.from(base64Image, 'base64');
+                const fileName = `profile-${Date.now()}.jpeg`;
+
+                const filePath = path.join(__dirname, '../uploads/profile', fileName);
+                fs.writeFileSync(filePath, buffer);
+
+                userImage = path.join(fileName);
+            }
+
             const userData: CreateUserInput = {
-                roleId: req.body.roleId,
+                roleId: parseInt(req.body.roleId),
                 userName: req.body.userName,
-                userImage: req.body.userImage,
+                userImage: userImage,
                 userPhoneNumber: req.body.userPhoneNumber,
-                email: req.body.email.toLowerCase(),
+                email: req.body.email,
                 password: req.body.password,
                 address: req.body.address,
-                latitude: req.body.latitude,
-                longitude: req.body.longitude,
+                latitude: parseFloat(req.body.latitude),
+                longitude: parseFloat(req.body.longitude),
                 pushToken: req.body.pushToken,
             };
 
-            const checkExistingUser = await userServices.findUserByEmail(userData.email.toLowerCase());
+            const checkExistingUser = await userServices.findUserByEmail(userData.email);
             if (checkExistingUser) {
                 return;
             }
@@ -102,27 +118,71 @@ export class AuthController {
 
     public async signUpBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
+            let bakeryImage = '';
+            const encodedBakeryImage = req.body.bakeryImage;
+            if (encodedBakeryImage) {
+                const buffer = Buffer.from(encodedBakeryImage, 'base64');
+                const fileName = `bakery-picture-${Date.now()}.jpeg`;
+
+                const filePath = path.join(__dirname, '../uploads/bakery-picture', fileName);
+                fs.writeFileSync(filePath, buffer);
+
+                bakeryImage = path.join(fileName);
+            }
+
+            let halalCertificateImage: string | undefined = undefined;
+            const encodedHalalCertificateImage = req.body.halalCertificate;
+            if (encodedHalalCertificateImage) {
+                const buffer = Buffer.from(encodedHalalCertificateImage, 'base64');
+                const fileName = `halal-certificate-${Date.now()}.jpeg`;
+
+                const filePath = path.join(__dirname, '../uploads/bakery-halal-certificate', fileName);
+                fs.writeFileSync(filePath, buffer);
+
+                halalCertificateImage = path.join(fileName);
+            }
+
             const bakeryData: CreateBakeryInput = {
                 userId: req.body.userId,
                 bakeryName: req.body.bakeryName,
-                bakeryImage: req.body.bakeryImage,
+                bakeryImage: bakeryImage,
                 bakeryDescription: req.body.bakeryDescription,
                 bakeryPhoneNumber: req.body.bakeryPhoneNumber,
                 openingTime: req.body.openingTime,
                 closingTime: req.body.closingTime,
                 bakeryAddress: req.body.bakeryAddress,
                 bakeryLatitude: req.body.bakeryLatitude,
-                bakeryLongitude: req.body.bakeryLongitude
+                bakeryLongitude: req.body.bakeryLongitude,
+                isHalal: req.body.isHalal || 0,
+                halalCertificate: halalCertificateImage
             };
 
             const newBakery = await bakeryServices.createBakery(bakeryData);
-            
-            const paymentDataArray: CreatePaymentInput[] = req.body.paymentMethods.map((payment: any) => ({
-                bakeryId: newBakery.bakeryId,
-                paymentMethod: payment.paymentMethod,
-                paymentService: payment.paymentService,
-                paymentDetail: payment.paymentDetail
-            }));
+
+            const paymentDataArray: CreatePaymentInput[] = [];
+            for (const payment of req.body.paymentMethods) {
+                let qrisImage: string | undefined = undefined;
+
+                if (payment.paymentMethod === 'QRIS') {
+                    const buffer = Buffer.from(payment.paymentDetail, 'base64');
+                    const fileName = `qris-${Date.now()}.jpeg`;
+
+                    const filePath = path.join(__dirname, '../uploads/bakery-qris', fileName);
+                    fs.writeFileSync(filePath, buffer);
+
+                    qrisImage = path.join(fileName);
+                    payment.paymentDetail = qrisImage;
+                }
+
+                console.log("updated payment", payment)
+
+                paymentDataArray.push({
+                    bakeryId: newBakery.bakeryId,
+                    paymentMethod: payment.paymentMethod,
+                    paymentService: payment.paymentService,
+                    paymentDetail: payment.paymentDetail
+                });
+            }
 
             await paymentServices.insertPayment(paymentDataArray);
 
@@ -388,16 +448,39 @@ export class AuthController {
         try {
             const { userId, ...updateData } = req.body;
 
-            const updatedUser = await userServices.updateUserById(parseInt(userId), updateData);
-
-            if (!updatedUser) {
-                console.log("[src][controllers][AuthController][updateUser] User not found");
-                res.status(404).json({ error: 'User not found' });
+            const prevUser = await userServices.findUserById(userId);
+            if (!prevUser) {
+                console.log("[src][controllers][ProductController][updateUser] User ID Not Found");
+                res.status(400).json({
+                    status: 400,
+                    message: "User ID Not Found",
+                });
                 return;
             }
 
+            const encodedUserImage = req.body.userImage;
+            if (encodedUserImage) {
+
+                if (prevUser.userImage) {
+                    const oldImagePath = path.join(__dirname, '../uploads/profile', prevUser.userImage);
+                    if (fs.existsSync(oldImagePath)) {
+                        fs.unlinkSync(oldImagePath);
+                    }
+                }
+
+                const buffer = Buffer.from(encodedUserImage, 'base64');
+                const fileName = `profile-${Date.now()}.jpeg`;
+
+                const filePath = path.join(__dirname, '../uploads/profile', fileName);
+                fs.writeFileSync(filePath, buffer);
+
+                updateData.userImage = path.join(fileName);
+            }
+
+            const updatedUser = await userServices.updateUserById(parseInt(userId), updateData);
+
             console.log("[src][controllers][AuthController][updateUser] User updated successfully");
-            res.status(200).json({ message: 'User updated successfully', user: updatedUser });
+            res.status(200).json({ status: 200, message: 'User updated successfully', user: updatedUser });
         } catch (error) {
             console.log("[src][controllers][AuthController][updateUser] ", error);
             next(error);
@@ -442,9 +525,7 @@ export class AuthController {
                 res.status(401).json({ error: 'Unauthorized' })
                 return;
             }
-
-            console.log("get user", getUser)
-
+            
             res.status(200).json({
                 status: 200,
                 user: getUser

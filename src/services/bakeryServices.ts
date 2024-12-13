@@ -12,6 +12,8 @@ export interface CreateBakeryInput {
     bakeryAddress: string;
     bakeryLatitude: number;
     bakeryLongitude: number;
+    isHalal: number;
+    halalCertificate?: string;
 }
 
 type BakeryWithProduct = Prisma.BakeryGetPayload<{
@@ -181,7 +183,6 @@ export class BakeryServices {
 
     public async deleteBakery(bakeryId: number): Promise<Bakery> {
         try {
-            console.log("bakery id", bakeryId)
             return await databaseService.getClient().bakery.delete({
                 where: { bakeryId },
             });

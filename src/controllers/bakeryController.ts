@@ -9,6 +9,8 @@ import { getPreciseDistance } from "geolib";
 import { UserServices } from "../services/userServices";
 import { sendMail } from "../config/mailer";
 import { generateActivateBakeryMailContent, generateDeactivateBakeryMailContent, generateRejectBakeryMailContent } from "../utilities/mailHandler";
+import path from "path";
+import fs from "fs";
 
 const bakeryServices = new BakeryServices();
 const productServices = new ProductServices();
@@ -187,16 +189,39 @@ export class BakeryController {
         try {
             const { bakeryId, ...updateData } = req.body;
 
-            const updatedBakery = await bakeryServices.updateBakeryById(parseInt(bakeryId), updateData);
-
-            if (!updatedBakery) {
-                console.log("[src][controllers][BakeryController][updateBakery] Bakery not found");
-                res.status(404).json({ error: 'Bakery not found' });
+            const prevBakery = await bakeryServices.findBakeryById(parseInt(bakeryId));
+            if (!prevBakery) {
+                console.log("[src][controllers][BakeryController][updateBakery] Bakery Not Found");
+                res.status(404).json({
+                    status: 404,
+                    message: "Bakery Not Found",
+                });
                 return;
             }
 
+            const encodedBakeryImage = req.body.bakeryImage;
+            if (encodedBakeryImage) {
+
+                if (prevBakery.bakeryImage) {
+                    const oldImagePath = path.join(__dirname, '../uploads/bakery-picture', prevBakery.bakeryImage);
+                    if (fs.existsSync(oldImagePath)) {
+                        fs.unlinkSync(oldImagePath);
+                    }
+                }
+
+                const buffer = Buffer.from(encodedBakeryImage, 'base64');
+                const fileName = `bakeryImage-${Date.now()}.jpeg`;
+
+                const filePath = path.join(__dirname, '../uploads/bakery-picture', fileName);
+                fs.writeFileSync(filePath, buffer);
+
+                updateData.bakeryImage = path.join(fileName);
+            }
+
+            const updatedBakery = await bakeryServices.updateBakeryById(parseInt(bakeryId), updateData);
+
             console.log("[src][controllers][BakeryController][updateBakery] Bakery updated successfully");
-            res.status(200).json({ message: 'Bakery updated successfully', bakery: updatedBakery });
+            res.status(200).json({ status: 200, message: 'Bakery updated successfully', bakery: updatedBakery });
         } catch (error) {
             console.log("[src][controllers][BakeryController][updateBakery] ", error);
             next(error);
@@ -222,7 +247,7 @@ export class BakeryController {
     public async findListBakery(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { isActive } = req.body;
-            
+
             const bakeries = await bakeryServices.findListBakery(isActive);
 
             if (!bakeries) {
@@ -288,7 +313,7 @@ export class BakeryController {
                 res.status(404).json({ error: 'Bakery not found' });
                 return;
             }
-            
+
             const info = sendMail(email, "Registrasi Bakeri Anda Ditolak", generateRejectBakeryMailContent(userName, status, message));
 
             if (info) {

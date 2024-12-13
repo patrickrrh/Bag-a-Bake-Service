@@ -54,6 +54,8 @@ model Bakery {
   bakeryLatitude Float
   bakeryLongitude Float
   isActive Int @default(0)
+  isHalal Int @default(0)
+  halalCertificate String?
   product Product[]
   favorite Favorite[]
   order Order[]
