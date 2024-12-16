@@ -18,12 +18,8 @@ const script_1 = __importDefault(require("../script"));
 class UserServices {
     findUserByEmail(email) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!email) {
-                console.log("[src][services][UserServices][findUserByEmail] Email is required");
-                throw new Error('Email is required');
-            }
             try {
-                return script_1.default.getClient().user.findUnique({
+                return yield script_1.default.getClient().user.findUnique({
                     where: {
                         email
                     }
@@ -51,10 +47,6 @@ class UserServices {
     }
     findUserById(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!userId) {
-                console.log("[src][services][UserServices][findUserById] User ID is required");
-                throw new Error('User ID is required');
-            }
             try {
                 return yield script_1.default.getClient().user.findUnique({
                     where: {
@@ -220,7 +212,7 @@ class UserServices {
             }
             catch (error) {
                 console.log("[src][services][UserServices][updatePushToken]", error);
-                throw new Error("Failed to update push token");
+                throw new Error(`Failed to update push token ${error}`);
             }
         });
     }

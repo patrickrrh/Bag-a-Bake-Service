@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
     }
 })
 
-export const sendMail = (to: string, subject: string, html: string) => {
+export const sendMail = async (to: string, subject: string, html: string) => {
     const mailOptions = {
         from: {
             name: "Bag A Bake",
@@ -19,7 +19,7 @@ export const sendMail = (to: string, subject: string, html: string) => {
         to: [to],
         subject,
         html
-    }
+    };
 
-    return transporter.sendMail(mailOptions)
-}
+    return await transporter.sendMail(mailOptions);
+};

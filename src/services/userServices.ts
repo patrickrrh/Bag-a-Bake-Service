@@ -18,22 +18,18 @@ export interface CreateUserInput {
 
 export class UserServices {
     public async findUserByEmail(email: string): Promise<User | null> {
-        if (!email) {
-            console.log("[src][services][UserServices][findUserByEmail] Email is required")
-            throw new Error('Email is required');
-        }
-
         try {
-            return databaseService.getClient().user.findUnique({
+            return await databaseService.getClient().user.findUnique({
                 where: {
                     email
                 }
             })
         } catch (error) {
-            console.log("[src][services][UserServices][findUserByEmail]", error)
-            throw new Error("Failed to find user")
+            console.log("[src][services][UserServices][findUserByEmail]", error);
+            throw new Error("Failed to find user");
         }
     }
+    
 
     public async createUser(user: CreateUserInput): Promise<User> {
         user.password = bycrpt.hashSync(user.password, 12);
@@ -48,11 +44,6 @@ export class UserServices {
     }
 
     public async findUserById(userId: number): Promise<User | null> {
-        if (!userId) {
-            console.log("[src][services][UserServices][findUserById] User ID is required")
-            throw new Error('User ID is required');
-        }
-
         try {
             return await databaseService.getClient().user.findUnique({
                 where: {
@@ -205,7 +196,7 @@ export class UserServices {
             })
         } catch (error) {
             console.log("[src][services][UserServices][updatePushToken]", error)
-            throw new Error("Failed to update push token")
+            throw new Error(`Failed to update push token ${error}`)
         }
     }
 }
