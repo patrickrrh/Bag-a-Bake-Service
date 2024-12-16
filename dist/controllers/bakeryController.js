@@ -294,15 +294,14 @@ class BakeryController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { bakeryId, email, userName, status, message } = req.body;
-                console.log("bakery id at controller", bakeryId);
                 const deletedBakery = yield bakeryServices.deleteBakery(bakeryId);
                 if (!deletedBakery) {
                     console.log("[src][controllers][BakeryController][deleteBakery] Bakery not found");
                     res.status(404).json({ error: 'Bakery not found' });
                     return;
                 }
-                const info = (0, mailer_1.sendMail)(email, "Registrasi Bakeri Anda Ditolak", (0, mailHandler_1.generateRejectBakeryMailContent)(userName, status, message));
-                if (info) {
+                const info = yield (0, mailer_1.sendMail)(email, "Registrasi Bakeri Anda Ditolak", (0, mailHandler_1.generateRejectBakeryMailContent)(userName, status, message));
+                if (info.accepted.length > 0) {
                     console.log("[src][controllers][AuthController][deleteBakery] Email sent successfully");
                     res.status(200).json({
                         status: 200,

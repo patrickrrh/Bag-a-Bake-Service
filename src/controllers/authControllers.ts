@@ -15,6 +15,7 @@ import { generateNewBakeryMailContent } from "../utilities/mailHandler";
 import path from "path";
 import fs from "fs";
 import { json } from "stream/consumers";
+import logger from "../utilities/logger";
 
 const userServices = new UserServices();
 const authServices = new AuthServices();
@@ -174,8 +175,6 @@ export class AuthController {
                     payment.paymentDetail = qrisImage;
                 }
 
-                console.log("updated payment", payment)
-
                 paymentDataArray.push({
                     bakeryId: newBakery.bakeryId,
                     paymentMethod: payment.paymentMethod,
@@ -186,9 +185,9 @@ export class AuthController {
 
             await paymentServices.insertPayment(paymentDataArray);
 
-            const info = sendMail("support@bagabake.com", "Pendaftaran Bakeri Baru", generateNewBakeryMailContent(bakeryData.bakeryName));
+            const info = await sendMail("support@bagabake.com", "Pendaftaran Bakeri Baru", generateNewBakeryMailContent(bakeryData.bakeryName));
 
-            if (info) {
+            if (info.accepted.length > 0) {
                 console.log("[src][controllers][AuthController][signUpBakery] Email sent successfully");
                 res.status(201).json({
                     status: 201,
@@ -295,9 +294,9 @@ export class AuthController {
             const expiresAt = Date.now() + 60 * 1000;
             otpStore[email.toLowerCase()] = { otp, expiresAt };
 
-            const info = sendMail(email.toLowerCase(), "Permintaan Ubah Kata Sandi", generateMailContent(otp, findUser.userName));
+            const info = await sendMail(email.toLowerCase(), "Permintaan Ubah Kata Sandi", generateMailContent(otp, findUser.userName));
 
-            if (info) {
+            if (info.accepted.length > 0) {
                 console.log("[src][controllers][AuthController][resetPassword] Email sent successfully");
                 res.status(200).json({
                     status: 200,
@@ -330,9 +329,9 @@ export class AuthController {
             const expiresAt = Date.now() + 60 * 1000;
             otpStore[email.toLowerCase()] = { otp, expiresAt };
 
-            const info = sendMail(email.toLowerCase(), "Kode OTP Registrasi", generateMailContent(otp, userName));
+            const info = await sendMail(email.toLowerCase(), "Kode OTP Registrasi", generateMailContent(otp, userName));
 
-            if (info) {
+            if (info.accepted.length > 0) {
                 console.log("[src][controllers][AuthController][sendSignUpOTP] Email sent successfully");
                 res.status(200).json({
                     status: 200,

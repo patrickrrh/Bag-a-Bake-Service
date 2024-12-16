@@ -28,7 +28,7 @@ class AuthServices {
                 });
             }
             catch (error) {
-                console.log("[src][services][AuthServices][addRefreshTokenToWhitelist] ", error);
+                console.error("[src][services][AuthServices][addRefreshTokenToWhitelist] ", error);
                 throw new Error("Failed to add refresh token to whitelist");
             }
         });

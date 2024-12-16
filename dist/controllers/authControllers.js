@@ -198,7 +198,6 @@ class AuthController {
                         qrisImage = path_1.default.join(fileName);
                         payment.paymentDetail = qrisImage;
                     }
-                    console.log("updated payment", payment);
                     paymentDataArray.push({
                         bakeryId: newBakery.bakeryId,
                         paymentMethod: payment.paymentMethod,
@@ -207,8 +206,8 @@ class AuthController {
                     });
                 }
                 yield paymentServices.insertPayment(paymentDataArray);
-                const info = (0, mailer_1.sendMail)("support@bagabake.com", "Pendaftaran Bakeri Baru", (0, mailHandler_1.generateNewBakeryMailContent)(bakeryData.bakeryName));
-                if (info) {
+                const info = yield (0, mailer_1.sendMail)("support@bagabake.com", "Pendaftaran Bakeri Baru", (0, mailHandler_1.generateNewBakeryMailContent)(bakeryData.bakeryName));
+                if (info.accepted.length > 0) {
                     console.log("[src][controllers][AuthController][signUpBakery] Email sent successfully");
                     res.status(201).json({
                         status: 201,
@@ -287,8 +286,8 @@ class AuthController {
                 const otp = (0, otpHandler_1.generateOTP)();
                 const expiresAt = Date.now() + 60 * 1000;
                 otpHandler_1.otpStore[email.toLowerCase()] = { otp, expiresAt };
-                const info = (0, mailer_1.sendMail)(email.toLowerCase(), "Permintaan Ubah Kata Sandi", (0, otpHandler_1.generateMailContent)(otp, findUser.userName));
-                if (info) {
+                const info = yield (0, mailer_1.sendMail)(email.toLowerCase(), "Permintaan Ubah Kata Sandi", (0, otpHandler_1.generateMailContent)(otp, findUser.userName));
+                if (info.accepted.length > 0) {
                     console.log("[src][controllers][AuthController][resetPassword] Email sent successfully");
                     res.status(200).json({
                         status: 200,
@@ -321,8 +320,8 @@ class AuthController {
                 const otp = (0, otpHandler_1.generateOTP)();
                 const expiresAt = Date.now() + 60 * 1000;
                 otpHandler_1.otpStore[email.toLowerCase()] = { otp, expiresAt };
-                const info = (0, mailer_1.sendMail)(email.toLowerCase(), "Kode OTP Registrasi", (0, otpHandler_1.generateMailContent)(otp, userName));
-                if (info) {
+                const info = yield (0, mailer_1.sendMail)(email.toLowerCase(), "Kode OTP Registrasi", (0, otpHandler_1.generateMailContent)(otp, userName));
+                if (info.accepted.length > 0) {
                     console.log("[src][controllers][AuthController][sendSignUpOTP] Email sent successfully");
                     res.status(200).json({
                         status: 200,
