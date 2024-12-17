@@ -144,7 +144,7 @@ export class AuthController {
             }
 
             const bakeryData: CreateBakeryInput = {
-                userId: req.body.userId,
+                userId: parseInt(req.body.userId),
                 bakeryName: req.body.bakeryName,
                 bakeryImage: bakeryImage,
                 bakeryDescription: req.body.bakeryDescription,
@@ -152,9 +152,9 @@ export class AuthController {
                 openingTime: req.body.openingTime,
                 closingTime: req.body.closingTime,
                 bakeryAddress: req.body.bakeryAddress,
-                bakeryLatitude: req.body.bakeryLatitude,
-                bakeryLongitude: req.body.bakeryLongitude,
-                isHalal: req.body.isHalal || 0,
+                bakeryLatitude: parseFloat(req.body.bakeryLatitude),
+                bakeryLongitude: parseFloat(req.body.bakeryLongitude),
+                isHalal: parseInt(req.body.isHalal) || 0,
                 halalCertificate: halalCertificateImage
             };
 
