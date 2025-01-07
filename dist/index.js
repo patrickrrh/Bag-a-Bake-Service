@@ -23,7 +23,7 @@ app.use((0, cors_1.default)({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept', 'X-Auth-Token'],
 }));
-app.use(express_1.default.json({ limit: '25mb' }));
+app.use(express_1.default.json({ limit: '100mb' }));
 const apiRouter = express_1.default.Router();
 apiRouter.use(authRoutes_1.default);
 apiRouter.use(productRoutes_1.default);

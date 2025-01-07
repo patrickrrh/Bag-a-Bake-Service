@@ -32,6 +32,9 @@ class BakeryServices {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 return yield script_1.default.getClient().bakery.findMany({
+                    where: {
+                        isActive: 1
+                    },
                     include: {
                         favorite: true
                     }
