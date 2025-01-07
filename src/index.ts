@@ -22,7 +22,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept', 'X-Auth-Token'],
 }))
 
-app.use(express.json({ limit: '25mb' }));
+app.use(express.json({ limit: '100mb' }));
 
 const apiRouter = express.Router();
 

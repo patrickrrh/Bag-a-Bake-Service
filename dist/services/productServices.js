@@ -137,7 +137,8 @@ class ProductServices {
                             },
                             closingTime: {
                                 gte: currentTime
-                            }
+                            },
+                            isActive: 1
                         },
                         isActive: 1,
                         productStock: { gt: 0 },
@@ -168,7 +169,8 @@ class ProductServices {
                             },
                             closingTime: {
                                 gte: currentTime
-                            }
+                            },
+                            isActive: 1
                         },
                         isActive: 1,
                         productStock: { gt: 0 },

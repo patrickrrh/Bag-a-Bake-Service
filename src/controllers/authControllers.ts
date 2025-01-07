@@ -46,6 +46,7 @@ export class AuthController {
     public async checkAccount(req: Request, res: Response, next: NextFunction): Promise<User | boolean> {
         try {
             const { email, password } = req.body
+
             const user = await userServices.findUserByEmail(email.toLowerCase());
             if (!user) {
                 console.log("[src][controllers][AuthController][checkAccount] Email is not registered");
@@ -158,7 +159,11 @@ export class AuthController {
                 halalCertificate: halalCertificateImage
             };
 
+            console.log("Bakery data", bakeryData)
+
             const newBakery = await bakeryServices.createBakery(bakeryData);
+
+            console.log("new bakery", newBakery)
 
             const paymentDataArray: CreatePaymentInput[] = [];
             for (const payment of req.body.paymentMethods) {
@@ -182,6 +187,8 @@ export class AuthController {
                     paymentDetail: payment.paymentDetail
                 });
             }
+
+            console.log("payment data", paymentDataArray)
 
             await paymentServices.insertPayment(paymentDataArray);
 

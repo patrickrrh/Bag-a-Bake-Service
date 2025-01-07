@@ -41,6 +41,9 @@ export class BakeryServices {
     public async findAllBakery(): Promise<Bakery[]> {
         try {
             return await databaseService.getClient().bakery.findMany({
+                where: {
+                    isActive: 1
+                },
                 include: {
                     favorite: true
                 }

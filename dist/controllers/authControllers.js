@@ -186,7 +186,9 @@ class AuthController {
                     isHalal: parseInt(req.body.isHalal) || 0,
                     halalCertificate: halalCertificateImage
                 };
+                console.log("Bakery data", bakeryData);
                 const newBakery = yield bakeryServices.createBakery(bakeryData);
+                console.log("new bakery", newBakery);
                 const paymentDataArray = [];
                 for (const payment of req.body.paymentMethods) {
                     let qrisImage = undefined;
@@ -205,6 +207,7 @@ class AuthController {
                         paymentDetail: payment.paymentDetail
                     });
                 }
+                console.log("payment data", paymentDataArray);
                 yield paymentServices.insertPayment(paymentDataArray);
                 const info = yield (0, mailer_1.sendMail)("support@bagabake.com", "Pendaftaran Bakeri Baru", (0, mailHandler_1.generateNewBakeryMailContent)(bakeryData.bakeryName));
                 if (info.accepted.length > 0) {
