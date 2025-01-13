@@ -219,10 +219,15 @@ export class OrderCustomerController {
             }
 
             if (isUpdateStock) {
-                const orderDetail = await orderSellerServices.findOrderDetailsByOrderId(orderId);
+                const orderDetail = await orderSellerServices.findOrderDetailByOrderId(orderId);
+
+                if (!orderDetail) {
+                    res.status(404).json({ message: "Order details not found" });
+                    return;
+                }
     
                 await Promise.all(
-                    orderDetail.map(async (detail) => {
+                    orderDetail.orderDetail.map(async (detail) => {
                         const currentProduct = await productServices.findProductById(detail.productId);
                         const updatedProductStock = Number(currentProduct?.productStock) + detail.productQuantity;
                         await productServices.updateProductStock(detail.productId, updatedProductStock);

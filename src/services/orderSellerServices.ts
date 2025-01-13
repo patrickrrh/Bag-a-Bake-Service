@@ -181,19 +181,6 @@ export class OrderSellerServices {
         }
     }
 
-    public async findOrderDetailsByOrderId(orderId: number): Promise<OrderDetail[]> {
-        try {
-            return await databaseService.getClient().orderDetail.findMany({
-                where: {
-                    orderId
-                }
-            })
-        } catch (error) {
-            console.log("[src][services][OrderSellerServices][findOrderDetailByOrderId] ", error)
-            throw new Error("Failed to find order detail")
-        }
-    }
-
     public async findOrderDetailByOrderId(orderId: number): Promise<OrderWithDetails | null> {
         try {
             const order = await databaseService.getClient().order.findUnique({

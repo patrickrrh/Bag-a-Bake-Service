@@ -185,9 +185,9 @@ export class OrderSellerController {
             await orderSellerServices.actionOrder(orderId, orderStatus, paymentStartedAt);
 
             if (orderStatus === 2) {
-                const orderDetails = await orderSellerServices.findOrderDetailsByOrderId(orderId);
+                const orderDetails = await orderSellerServices.findOrderDetailByOrderId(orderId);
 
-                if (orderDetails.length === 0) {
+                if (!orderDetails) {
                     res.status(404).json({
                         status: 404,
                         message: "Order details not found",
@@ -196,7 +196,7 @@ export class OrderSellerController {
                 }
 
                 await Promise.all(
-                    orderDetails.map(async (detail) => {
+                    orderDetails.orderDetail.map(async (detail) => {
                         const product = await productServices.findProductById(detail.productId);
                         const updatedProductStock = Number(product?.productStock) - detail.productQuantity
                         await productServices.updateProductStock(detail.productId, updatedProductStock);
