@@ -187,8 +187,12 @@ class OrderCustomerController {
                     return;
                 }
                 if (isUpdateStock) {
-                    const orderDetail = yield orderSellerServices.findOrderDetailsByOrderId(orderId);
-                    yield Promise.all(orderDetail.map((detail) => __awaiter(this, void 0, void 0, function* () {
+                    const orderDetail = yield orderSellerServices.findOrderDetailByOrderId(orderId);
+                    if (!orderDetail) {
+                        res.status(404).json({ message: "Order details not found" });
+                        return;
+                    }
+                    yield Promise.all(orderDetail.orderDetail.map((detail) => __awaiter(this, void 0, void 0, function* () {
                         const currentProduct = yield productServices.findProductById(detail.productId);
                         const updatedProductStock = Number(currentProduct === null || currentProduct === void 0 ? void 0 : currentProduct.productStock) + detail.productQuantity;
                         yield productServices.updateProductStock(detail.productId, updatedProductStock);

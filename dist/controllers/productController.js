@@ -173,20 +173,27 @@ class ProductController {
             try {
                 const { productId } = req.body;
                 const numericProductId = Number(productId);
-                console.log(req.body);
-                console.log(productId);
                 if (!productId) {
                     console.log("[src][controllers][ProductController][deleteProductById] Product ID is required");
-                    res.status(400).send("Product ID is required");
+                    res.status(400).json({
+                        status: 400,
+                        message: "Product ID is required",
+                    });
                     return;
                 }
                 const deletedProduct = yield productServices.deleteProductById(numericProductId);
                 if (!deletedProduct) {
                     console.log("[src][controllers][ProductController][deleteProductById] Product not found or could not be deleted");
-                    res.status(404).send("Product not found or could not be deleted");
+                    res.status(404).json({
+                        status: 404,
+                        message: "Product not found or could not be deleted",
+                    });
                     return;
                 }
-                res.status(200).send("Product deleted successfully");
+                res.status(200).json({
+                    status: 200,
+                    message: "Product berhasil dihapus",
+                });
             }
             catch (error) {
                 console.log("[src][controllers][ProductController][deleteProductById] ", error);

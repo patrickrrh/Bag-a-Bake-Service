@@ -199,21 +199,6 @@ class OrderSellerServices {
             }
         });
     }
-    findOrderDetailsByOrderId(orderId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                return yield script_1.default.getClient().orderDetail.findMany({
-                    where: {
-                        orderId
-                    }
-                });
-            }
-            catch (error) {
-                console.log("[src][services][OrderSellerServices][findOrderDetailByOrderId] ", error);
-                throw new Error("Failed to find order detail");
-            }
-        });
-    }
     findOrderDetailByOrderId(orderId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {

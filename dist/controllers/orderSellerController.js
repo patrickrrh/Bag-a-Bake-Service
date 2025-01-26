@@ -158,15 +158,15 @@ class OrderSellerController {
                 }
                 yield orderSellerServices.actionOrder(orderId, orderStatus, paymentStartedAt);
                 if (orderStatus === 2) {
-                    const orderDetails = yield orderSellerServices.findOrderDetailsByOrderId(orderId);
-                    if (orderDetails.length === 0) {
+                    const orderDetails = yield orderSellerServices.findOrderDetailByOrderId(orderId);
+                    if (!orderDetails) {
                         res.status(404).json({
                             status: 404,
                             message: "Order details not found",
                         });
                         return;
                     }
-                    yield Promise.all(orderDetails.map((detail) => __awaiter(this, void 0, void 0, function* () {
+                    yield Promise.all(orderDetails.orderDetail.map((detail) => __awaiter(this, void 0, void 0, function* () {
                         const product = yield productServices.findProductById(detail.productId);
                         const updatedProductStock = Number(product === null || product === void 0 ? void 0 : product.productStock) - detail.productQuantity;
                         yield productServices.updateProductStock(detail.productId, updatedProductStock);
